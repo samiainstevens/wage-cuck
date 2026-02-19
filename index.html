@@ -3,6 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A little money counter for all you capitalist dreamboats out there.">
+  <meta property="og:title" content="Wage Cuck">
+  <meta property="og:description" content="A little money counter for all you capitalist dreamboats out there.">
+  <meta property="og:image" content="wagecuckfavicon.png">
+  <link rel="icon" type="image/png" href="wagecuckfavicon.png">
+  <link rel="apple-touch-icon" href="wagecuckfavicon.png">
   <title>Wage Cuck</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -343,7 +349,8 @@
       .topBtn img { height: 30px; }
       .optItem { font-size: 18px; padding: 10px 18px; }
       #optionsPanel { min-width: 160px; }
-      #footer { font-size: 10px; text-align: right; right: 10px; width: auto; }
+      #footer { font-size: 10px; }
+      #footer.footerRight { text-align: right; right: 10px; width: auto; }
       #startScreen { padding: 18px 18px 22px; }
       #startScreen h1 { font-size: 32px; }
       #startBtn { font-size: 18px; padding: 10px 28px; }
@@ -472,8 +479,8 @@
   <div id="infoBox">
     <button id="infoCloseBtn" onclick="closeInfo()">×</button>
     <p>Hello,</p>
-    <p>Do you earn an hourly wage? Does your boss think that your time should be measured by the seconds that you spend at your dreary soul-destroying job? Then you must be... a wage cuck! That’s right, you’re a wonderful little cog in the machine called Capitalism. Your worth is determined only by the moments of your life you devote to your job. Everything else (your commute, your workplace-related health issues, your sleepless nights) is meaningless.</p>
-    <p>I built this little web app to remind you of your place in the hierarchy. Put it on your phone or your desktop as a nice little timer. Maybe leave it running in the background for management to see. And don’t forget, you’re here forever!</p>
+    <p>Do you earn a wage? Hourly? Monthly? Annual? Does your boss think that your time should be measured by the seconds that you spend at your dreary soul-destroying job? Then you must be... a wage cuck! That’s right, you’re a wonderful little cog in the machine called Capitalism. Your worth is determined only by the moments of your life you devote to your job. Everything else (your commute, your workplace-related health issues, your sleepless nights) is meaningless.</p>
+    <p>I built this web app to remind you of your place in the hierarchy. Put it on your phone or your desktop as a nice little timer. Maybe leave it running in the background for management to see. And don’t forget, you’re here forever!</p>
     <p>Kind regards,</p>
     <p>Sam</p>
     <p style="margin-top:14px;font-size:12px;"><a href="https://www.instagram.com/samiainstevens" target="_blank">Instagram</a> · <a href="https://www.samiainstevens.com" target="_blank">samiainstevens.com</a></p>
@@ -481,7 +488,7 @@
   </div>
 </div>
 
-<div id="footer">
+<div id="footer" class="footerRight">
   <a href="https://buymeacoffee.com/samiainstevens" target="_blank">Buy Me a Coffee</a>
 </div>
 
@@ -492,21 +499,23 @@ const CURRENCY_DATA = {
   'USD': { sym:'$', defaultWage:7.25, name:'dollars', singular:'dollar',
     infoHTML:'$7.25 per hour is the federal minimum wage since July 2009 (accurate as of Feb 2026).' },
   'EUR': { sym:'€', defaultWage:4.10, name:'euros', singular:'euro',
-    infoHTML:'&ldquo;In 2022, the median gross hourly earnings were €14.9 in the EU, from €4.1 in Bulgaria to €29.8 in Denmark.&rdquo; &mdash; <a href="https://ec.europa.eu/eurostat/statistics-explained/index.php?title=Wages_and_labour_costs" target="_blank">source: European Commission</a>' }
+    infoHTML:'&ldquo;In 2022, the median gross hourly earnings were €14.9 in the EU, from €4.1 in Bulgaria to €29.8 in Denmark.&rdquo; - <a href="https://ec.europa.eu/eurostat/statistics-explained/index.php?title=Wages_and_labour_costs" target="_blank">source: European Commission</a>' }
 };
 
 const NOTE_IMAGES = { GBP: 'pound.png', USD: 'dollar.png', EUR: 'euro.png' };
-const NOTE_IMG_WIDTH = 90;
-const NOTE_OVERLAP = 6;
+const NOTE_IMG_WIDTH = 90; // approximate rendered width at 60px height
+const NOTE_OVERLAP = 6;    // px offset between stacked notes
 
 function repositionNotes() {
   const container = document.getElementById('noteStack');
   const imgs = container.querySelectorAll('img');
   if (imgs.length === 0) return;
-  const availW = window.innerWidth - 20;
+  const availW = window.innerWidth - 20; // 10px padding each side
+  // How many notes fit per row?
+  const noteW = NOTE_OVERLAP; // each additional note adds this much width
   const firstNoteW = NOTE_IMG_WIDTH;
-  const maxPerRow = Math.max(1, Math.floor((availW - firstNoteW) / NOTE_OVERLAP) + 1);
-  const rowH = 14;
+  const maxPerRow = Math.max(1, Math.floor((availW - firstNoteW) / noteW) + 1);
+  const rowH = 14; // vertical offset between rows
   for (let i = 0; i < imgs.length; i++) {
     const row = Math.floor(i / maxPerRow);
     const col = i % maxPerRow;
@@ -599,8 +608,17 @@ let lastSoundTime = 0;
 async function initAudio() {
   if (audioCtx) return;
   audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  // iOS/WebKit requires resume + silent buffer play inside a user gesture to unlock audio
+  if (audioCtx.state === 'suspended') await audioCtx.resume();
   try {
-    if (audioCtx.state === 'suspended') await audioCtx.resume();
+    // Play a tiny silent buffer to unlock audio on iOS in-app browsers
+    const silentBuf = audioCtx.createBuffer(1, 1, audioCtx.sampleRate);
+    const silentSrc = audioCtx.createBufferSource();
+    silentSrc.buffer = silentBuf;
+    silentSrc.connect(audioCtx.destination);
+    silentSrc.start(0);
+  } catch(ignore) {}
+  try {
     const [resp1, resp2] = await Promise.all([
       fetch('coindropsound.mp3'),
       fetch('manycoinssound.mp3')
@@ -785,10 +803,6 @@ function onAlreadyStartedChange() {
   document.getElementById('alreadyStartedWrap').style.display = checked ? 'block' : 'none';
 }
 
-function toggleTaxMode() {
-  taxEnabled = !taxEnabled;
-}
-
 function startTaxSequence() {
   taxPaused = true;
   taxPhase = 'show';
@@ -894,9 +908,6 @@ function closeInfo() {
   document.getElementById('infoOverlay').classList.remove('open');
 }
 
-function tryTaxCoin() {
-  // Old per-coin tax removed; tax now happens at 100 coins
-}
 function updateThemeButtons() {
   const ids = { money: 'themeMoneyBtn', dark: 'themeDarkBtn', light: 'themeLightBtn' };
   for (const [key, id] of Object.entries(ids)) {
@@ -927,9 +938,8 @@ const COIN_SPR_R = 5;
 
 let scale   = 1;
 let coinR   = COIN_SPR_R;
-let cvH     = 256;
 
-function getWalls(cy) {
+function getWalls() {
   return {
     left : 0,
     right: canvas.width,
@@ -941,14 +951,15 @@ function clamp(v,lo,hi){ return v<lo?lo:v>hi?hi:v; }
 
 function resizeCanvas() {
   // Size coins so 100 can fit: coinR = sqrt(area * packing) / 20
+  const oldCoinR = coinR;
+  const area = window.innerWidth * window.innerHeight;
+  const newCoinR = Math.max(8, Math.min(80, Math.sqrt(area * 0.55) / 20));
   const oldW = canvas.width;
   const oldH = canvas.height;
-  const area = window.innerWidth * window.innerHeight;
-  coinR = Math.max(8, Math.min(80, Math.sqrt(area * 0.55) / 20));
+  coinR = newCoinR;
   canvas.width  = window.innerWidth;
   canvas.height = window.innerHeight;
-  cvH = canvas.height;
-  // Scale coin positions proportionally on resize
+  // Scale coin positions proportionally on resize & unsettle so gravity acts
   if (oldW > 1 && oldH > 1 && coins.length > 0) {
     const sx = canvas.width / oldW;
     const sy = canvas.height / oldH;
@@ -978,6 +989,7 @@ function isUITarget(e) {
 }
 
 function getCoinAtPos(px, py) {
+  // Find topmost (last drawn) coin under pointer
   for (let i = coins.length - 1; i >= 0; i--) {
     const c = coins[i];
     const dx = px - c.x, dy = py - c.y;
@@ -991,6 +1003,7 @@ function startHold(e) {
   if (isUITarget(e)) return;
   const px = e.clientX !== undefined ? e.clientX : e.pageX;
   const py = e.clientY !== undefined ? e.clientY : e.pageY;
+  // Check if clicking on a coin to drag it
   const hit = getCoinAtPos(px, py);
   if (hit) {
     dragCoin = hit;
@@ -1000,10 +1013,11 @@ function startHold(e) {
     dragOffY = hit.y - py;
     dragPrevX = px;
     dragPrevY = py;
-    return;
+    return; // dragging, don't start hold-shake
   }
   holdActive = true;
   holdStart = performance.now();
+  // Dim after 3 seconds of holding
   holdDimTimer = setTimeout(function() {
     if (holdActive) document.getElementById('holdDim').classList.add('show');
   }, 3000);
@@ -1038,6 +1052,7 @@ function endHold() {
   holdStart = 0;
   clearTimeout(holdDimTimer);
   document.getElementById('holdDim').classList.remove('show');
+  // Shake coins on release — 1x for quick tap, ramps to 15x at 3s hold
   if (!running || coins.length === 0) return;
   const mult = elapsed <= 0.3 ? 1 : Math.min(15, 1 + (elapsed - 0.3) * (14 / 2.7));
   for (const c of coins) {
@@ -1065,7 +1080,7 @@ const SUBSTEPS       = 5;         // physics sub-steps per frame
 const GRAVITY        = 0.28;      // total gravity per frame (split across substeps)
 const RESTITUTION_WALL  = 0.30;   // bounciness off jar walls
 const RESTITUTION_FLOOR = 0.22;   // bounciness off jar floor (lower = lands and rolls instead of bouncing)
-const RESTITUTION_COIN  = 0.30;   // bounciness between coins
+const RESTITUTION_COIN  = 0.35;   // bounciness between coins
 const FRICTION_FLOOR = 0.008;     // floor sliding friction (additive deceleration per substep)
 const FRICTION_COIN  = 0.10;      // friction between coins
 const AIR_DAMP       = 0.999;     // per-substep velocity damping
@@ -1082,7 +1097,7 @@ let penniesPerSecond=0, currency='£';
 let selectedCurrencyKey = 'GBP';
 let animationId=null, lastTimestamp=null, running=false;
 
-async function start() {
+function start() {
   const key  = document.querySelector('input[name="currency"]:checked').value;
   const data = CURRENCY_DATA[key];
   currency   = data.sym;
@@ -1092,6 +1107,7 @@ async function start() {
   document.getElementById("startScreen").style.display = "none";
   document.getElementById("jarScreen").style.display   = "block";
   document.getElementById("restartBtn").style.display = "block";
+  document.getElementById("footer").classList.remove("footerRight");
   // Tax mode
   taxEnabled = document.getElementById('taxCheckbox').checked;
   taxRate = (parseFloat(document.getElementById('taxRate').value) || 20) / 100;
@@ -1121,8 +1137,6 @@ async function start() {
     }
   }
   running=true; lastTimestamp=null;
-  // Pre-load audio so it's ready when user enables sound via button
-  await initAudio();
   animationId = requestAnimationFrame(loop);
 }
 
@@ -1137,6 +1151,7 @@ function restart() {
   document.getElementById("jarScreen").style.display  ="none";
   document.getElementById("restartBtn").style.display = "none";
   taxEnabled = false;
+  document.getElementById("footer").classList.add("footerRight");
   document.getElementById("startScreen").style.display="block";
 }
 
@@ -1187,7 +1202,7 @@ function spawnCoinSilent() {
     spin: (Math.random() - 0.5) * 0.20 + (Math.random() > 0.5 ? 0.04 : -0.04),
     settled: false,
     restFrames: 0,
-    hasPlayedSound: true
+    hasPlayedSound: true // suppress landing sound for catch-up coins
   });
 }
 
@@ -1270,6 +1285,7 @@ function updatePhysics() {
         if (c.x < minX) c.x = minX;
         if (c.x > maxX) c.x = maxX;
         if (c.y > maxY) c.y = maxY;
+
 
       }
     }
@@ -1368,6 +1384,7 @@ function updatePhysics() {
           c.vx -= Math.sign(c.vx) * FRICTION_FLOOR;
         }
       }
+
 
     }
 
