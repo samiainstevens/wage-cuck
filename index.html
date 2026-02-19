@@ -3,6 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A little money counter for all you capitalist dreamboats out there.">
+  <meta property="og:title" content="Wage Cuck">
+  <meta property="og:description" content="A little money counter for all you capitalist dreamboats out there.">
+  <meta property="og:image" content="wagecuckfavicon.png">
+  <link rel="icon" type="image/png" href="wagecuckfavicon.png">
+  <link rel="apple-touch-icon" href="wagecuckfavicon.png">
   <title>Wage Cuck</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -333,6 +339,7 @@
       transition: opacity 0.2s;
     }
     #footer a:hover { opacity: 1; }
+    #footer.footerRight { text-align: right; right: 10px; width: auto; }
     @media (max-width: 600px) {
       #titleText { font-size: 22px; }
       #counter #counterAmount { font-size: 38px; }
@@ -343,7 +350,7 @@
       .topBtn img { height: 30px; }
       .optItem { font-size: 18px; padding: 10px 18px; }
       #optionsPanel { min-width: 160px; }
-      #footer { font-size: 10px; text-align: right; right: 10px; width: auto; }
+      #footer { font-size: 10px; }
       #startScreen { padding: 18px 18px 22px; }
       #startScreen h1 { font-size: 32px; }
       #startBtn { font-size: 18px; padding: 10px 28px; }
@@ -481,7 +488,7 @@
   </div>
 </div>
 
-<div id="footer">
+<div id="footer" class="footerRight">
   <a href="https://buymeacoffee.com/samiainstevens" target="_blank">Buy Me a Coffee</a>
 </div>
 
@@ -495,7 +502,7 @@ const CURRENCY_DATA = {
     infoHTML:'&ldquo;In 2022, the median gross hourly earnings were €14.9 in the EU, from €4.1 in Bulgaria to €29.8 in Denmark.&rdquo; &mdash; <a href="https://ec.europa.eu/eurostat/statistics-explained/index.php?title=Wages_and_labour_costs" target="_blank">source: European Commission</a>' }
 };
 
-const NOTE_IMAGES = { GBP: 'pound.png', USD: 'dollar.png', EUR: 'euro.png' };
+const NOTE_IMAGES = { GBP: 'Pound.png', USD: 'Dollar.png', EUR: 'euro.png' };
 const NOTE_IMG_WIDTH = 90; // approximate rendered width at 60px height
 const NOTE_OVERLAP = 6;    // px offset between stacked notes
 
@@ -601,8 +608,17 @@ let lastSoundTime = 0;
 async function initAudio() {
   if (audioCtx) return;
   audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  // iOS/WebKit requires resume + silent buffer play inside a user gesture to unlock audio
+  if (audioCtx.state === 'suspended') await audioCtx.resume();
   try {
-    if (audioCtx.state === 'suspended') await audioCtx.resume();
+    // Play a tiny silent buffer to unlock audio on iOS in-app browsers
+    const silentBuf = audioCtx.createBuffer(1, 1, audioCtx.sampleRate);
+    const silentSrc = audioCtx.createBufferSource();
+    silentSrc.buffer = silentBuf;
+    silentSrc.connect(audioCtx.destination);
+    silentSrc.start(0);
+  } catch(ignore) {}
+  try {
     const [resp1, resp2] = await Promise.all([
       fetch('coindropsound.mp3'),
       fetch('manycoinssound.mp3')
@@ -787,10 +803,6 @@ function onAlreadyStartedChange() {
   document.getElementById('alreadyStartedWrap').style.display = checked ? 'block' : 'none';
 }
 
-function toggleTaxMode() {
-  taxEnabled = !taxEnabled;
-}
-
 function startTaxSequence() {
   taxPaused = true;
   taxPhase = 'show';
@@ -896,9 +908,6 @@ function closeInfo() {
   document.getElementById('infoOverlay').classList.remove('open');
 }
 
-function tryTaxCoin() {
-  // Old per-coin tax removed; tax now happens at 100 coins
-}
 function updateThemeButtons() {
   const ids = { money: 'themeMoneyBtn', dark: 'themeDarkBtn', light: 'themeLightBtn' };
   for (const [key, id] of Object.entries(ids)) {
@@ -929,9 +938,8 @@ const COIN_SPR_R = 5;
 
 let scale   = 1;
 let coinR   = COIN_SPR_R;
-let cvH     = 256;
 
-function getWalls(cy) {
+function getWalls() {
   return {
     left : 0,
     right: canvas.width,
@@ -951,7 +959,6 @@ function resizeCanvas() {
   coinR = newCoinR;
   canvas.width  = window.innerWidth;
   canvas.height = window.innerHeight;
-  cvH = canvas.height;
   // Scale coin positions proportionally on resize & unsettle so gravity acts
   if (oldW > 1 && oldH > 1 && coins.length > 0) {
     const sx = canvas.width / oldW;
@@ -1090,7 +1097,7 @@ let penniesPerSecond=0, currency='£';
 let selectedCurrencyKey = 'GBP';
 let animationId=null, lastTimestamp=null, running=false;
 
-async function start() {
+function start() {
   const key  = document.querySelector('input[name="currency"]:checked').value;
   const data = CURRENCY_DATA[key];
   currency   = data.sym;
@@ -1100,6 +1107,7 @@ async function start() {
   document.getElementById("startScreen").style.display = "none";
   document.getElementById("jarScreen").style.display   = "block";
   document.getElementById("restartBtn").style.display = "block";
+  document.getElementById("footer").classList.remove("footerRight");
   // Tax mode
   taxEnabled = document.getElementById('taxCheckbox').checked;
   taxRate = (parseFloat(document.getElementById('taxRate').value) || 20) / 100;
@@ -1129,8 +1137,6 @@ async function start() {
     }
   }
   running=true; lastTimestamp=null;
-  // Pre-load audio so it's ready when user enables sound via button
-  await initAudio();
   animationId = requestAnimationFrame(loop);
 }
 
@@ -1145,6 +1151,7 @@ function restart() {
   document.getElementById("jarScreen").style.display  ="none";
   document.getElementById("restartBtn").style.display = "none";
   taxEnabled = false;
+  document.getElementById("footer").classList.add("footerRight");
   document.getElementById("startScreen").style.display="block";
 }
 
