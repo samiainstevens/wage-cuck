@@ -1,0 +1,1608 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Wage Cuck</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background-image: url('bkgtile.png');
+      background-repeat: repeat;
+      image-rendering: pixelated;
+      font-family: "Comic Sans MS", "Comic Neue", cursive;
+      font-weight: bold;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding-bottom: 40px;
+    }
+    h1 { font-weight: 900; margin: 0 0 12px 0; }
+    #startScreen h1 {
+      font-size: 42px;
+      display: inline-block;
+      animation: wiggle 2.5s ease-in-out infinite;
+    }
+    @keyframes wiggle {
+      0%   { transform: rotate(0deg) scale(1); }
+      15%  { transform: rotate(3deg) scale(1.03); }
+      30%  { transform: rotate(-2.5deg) scale(1.01); }
+      45%  { transform: rotate(2deg) scale(1.04); }
+      60%  { transform: rotate(-1.5deg) scale(1.02); }
+      75%  { transform: rotate(1deg) scale(1.01); }
+      100% { transform: rotate(0deg) scale(1); }
+    }
+    #startScreen {
+      background: #b2dde9;
+      border: none;
+      border-radius: 12px;
+      padding: 24px 32px 28px;
+      text-align: center;
+      max-width: 520px;
+    }
+    #startScreen p { margin: 0 0 4px 0; }
+    #wageRow {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 14px;
+      margin-top: 6px;
+    }
+    #wageTypeRadios { margin-bottom: 6px; font-size: 13px; }
+    #wageTypeRadios label { cursor: pointer; margin: 0 4px; }
+    #wageControls { text-align: center; }
+    #wageControls input[type="number"] {
+      width: 80px;
+      font-family: "Comic Sans MS", "Comic Neue", cursive;
+      font-weight: bold;
+    }
+    .wageSection { display: none; }
+    .wageSection.active { display: block; }
+    #hourlyCalcResult {
+      margin-top: 6px;
+      font-size: 13px;
+      font-weight: 900;
+      color: #2a7;
+      min-height: 1.4em;
+    }
+    #wageInfo {
+      max-width: 200px;
+      font-size: 11.5px;
+      text-align: left;
+      line-height: 1.45;
+      padding-top: 2px;
+    }
+    #wageInfo a { color: inherit; }
+    #startBtn {
+      margin-top: 18px;
+      font-family: "Comic Sans MS", "Comic Neue", cursive;
+      font-weight: 900;
+      font-size: 22px;
+      padding: 12px 38px;
+      background: #ffdd57;
+      color: #333;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 4px 0 #c87000, 0 6px 12px rgba(0,0,0,0.18);
+      transition: transform 0.08s, box-shadow 0.08s;
+      letter-spacing: 1px;
+    }
+    #startBtn:hover  { transform: translateY(-2px); box-shadow: 0 6px 0 #c87000, 0 8px 16px rgba(0,0,0,0.2); }
+    #startBtn:active { transform: translateY(3px);  box-shadow: 0 1px 0 #c87000; }
+    #jarScreen { display: none; text-align: center; padding-top: 50px; }
+    .infoBox {
+      display: inline-block;
+      background: #b2dde9;
+      border: none;
+      border-radius: 10px;
+      padding: 6px 20px;
+      margin: 6px 0;
+      font-weight: 900;
+      font-size: 20px;
+    }
+    #counter {
+      font-size: 40px;
+      text-align: center;
+    }
+    #counter #earnedLabel,
+    #counter #cuckLabel {
+      display: none;
+      font-size: 14px;
+      font-weight: 900;
+      line-height: 1.3;
+    }
+    #counter.full #earnedLabel,
+    #counter.full #cuckLabel {
+      display: block;
+    }
+    #counter #counterAmount {
+      font-size: 40px;
+    }
+    #noteStack {
+      position: fixed;
+      bottom: 30px;
+      left: 10px;
+      z-index: 10;
+      pointer-events: none;
+    }
+    #noteStack img {
+      position: absolute;
+      height: 60px;
+      width: auto;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+    #holdDim {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.05);
+      z-index: 5;
+      pointer-events: none;
+    }
+    #holdDim.show { display: block; }
+    #topBar {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 100;
+    }
+    #titleText { font-weight: 900; font-size: 22px; }
+    .topBtn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: "Comic Sans MS", "Comic Neue", cursive;
+      font-weight: bold;
+      font-size: inherit;
+      padding: 0;
+    }
+    .topBtn img {
+      height: 28px;
+      width: auto;
+      image-rendering: pixelated;
+      vertical-align: middle;
+    }
+    #optionsWrap.open .topBtn img {
+      opacity: 0.5;
+    }
+    #optionsWrap {
+      position: relative;
+      display: inline-block;
+    }
+    #optionsPanel {
+      display: none;
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: 6px;
+      background: #b2dde9;
+      border-radius: 8px;
+      padding: 6px 0;
+      min-width: 140px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.18);
+      z-index: 200;
+    }
+    #optionsWrap.open #optionsPanel { display: block; }
+    .optItem {
+      display: block;
+      width: 100%;
+      text-align: left;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: "Comic Sans MS", "Comic Neue", cursive;
+      font-weight: bold;
+      font-size: 14px;
+      padding: 6px 14px;
+      white-space: nowrap;
+    }
+    .optItem:hover { background: rgba(0,0,0,0.07); }
+    .optItem.disabled {
+      opacity: 0.5;
+      pointer-events: none;
+      cursor: default;
+    }
+    .optSep {
+      height: 1px;
+      background: rgba(0,0,0,0.12);
+      margin: 4px 10px;
+    }
+
+    #infoOverlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 500;
+      justify-content: center;
+      align-items: center;
+    }
+    #infoOverlay.open { display: flex; }
+    #infoBox {
+      background: #b2dde9;
+      border-radius: 12px;
+      padding: 28px 32px 24px;
+      max-width: 480px;
+      width: 90%;
+      position: relative;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.25);
+      font-size: 13.5px;
+      line-height: 1.55;
+      font-weight: normal;
+    }
+    #infoBox p { margin: 0 0 10px 0; }
+    #infoBox p:last-of-type { margin-bottom: 0; }
+    #infoCloseBtn {
+      position: absolute;
+      top: 8px;
+      right: 14px;
+      background: none;
+      border: none;
+      font-family: "Comic Sans MS", "Comic Neue", cursive;
+      font-size: 22px;
+      font-weight: bold;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0;
+      opacity: 0.6;
+    }
+    #infoCloseBtn:hover { opacity: 1; }
+    body.darkMode #infoBox { background: #333; color: #eee; }
+    body.lightMode #infoBox { background: #e2dfda; color: #222; }
+
+    body.darkMode {
+      background-image: none !important;
+      background-color: #1e1e1e !important;
+      color: #eee !important;
+    }
+    body.darkMode #startScreen,
+    body.darkMode .infoBox {
+      background: #333 !important;
+      color: #eee !important;
+    }
+    body.darkMode #optionsPanel {
+      background: #333 !important;
+      color: #eee !important;
+    }
+    body.darkMode .optSep { background: rgba(255,255,255,0.15); }
+    body.darkMode .optItem:hover { background: rgba(255,255,255,0.1); }
+    body.darkMode #footer a { color: #aaa; }
+
+    body.lightMode {
+      background-image: none !important;
+      background-color: #f0eeeb !important;
+      color: #222 !important;
+    }
+    body.lightMode #startScreen,
+    body.lightMode .infoBox {
+      background: #e2dfda !important;
+      color: #222 !important;
+    }
+    body.lightMode #optionsPanel {
+      background: #e2dfda !important;
+      color: #222 !important;
+    }
+    body.lightMode .optSep { background: rgba(0,0,0,0.12); }
+    body.lightMode .optItem:hover { background: rgba(0,0,0,0.07); }
+    body.lightMode #footer a { color: #555; }
+    canvas {
+      display: block;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 1;
+    }
+    .infoBox {
+      position: relative;
+      z-index: 10;
+    }
+    #jarScreen {
+      justify-content: flex-start;
+      padding-top: 10px;
+    }
+    #footer {
+      position: fixed;
+      bottom: 7px;
+      width: 100%;
+      text-align: center;
+      font-size: 11px;
+      z-index: 10;
+    }
+    #footer a {
+      color: #555;
+      text-decoration: none;
+      margin: 0 9px;
+      opacity: 0.55;
+      font-weight: bold;
+      transition: opacity 0.2s;
+    }
+    #footer a:hover { opacity: 1; }
+    @media (max-width: 600px) {
+      #titleText { font-size: 22px; }
+      #counter #counterAmount { font-size: 38px; }
+      #counter #earnedLabel,
+      #counter #cuckLabel { font-size: 14px; }
+      .infoBox { font-size: 18px; padding: 6px 16px; }
+      #noteStack img { height: 45px; }
+      .topBtn img { height: 30px; }
+      .optItem { font-size: 18px; padding: 10px 18px; }
+      #optionsPanel { min-width: 160px; }
+      #footer { font-size: 10px; }
+      #startScreen { padding: 18px 18px 22px; }
+      #startScreen h1 { font-size: 32px; }
+      #startBtn { font-size: 18px; padding: 10px 28px; }
+    }
+    #taxOverlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      z-index: 400;
+      justify-content: center;
+      align-items: center;
+      background: rgba(0,0,0,0.3);
+      pointer-events: none;
+    }
+    #taxOverlay.show { display: flex; }
+    #taxOverlay span {
+      font-size: 25vw;
+      font-weight: 900;
+      color: #ff2222;
+      text-shadow: 0 0 40px rgba(255,0,0,0.5);
+      animation: taxPulse 0.4s ease-in-out infinite alternate;
+    }
+    @keyframes taxPulse {
+      0%   { transform: scale(1); opacity: 0.8; }
+      100% { transform: scale(1.08); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="startScreen">
+  <h1>Wage Cuck</h1>
+  <p>Select currency:</p>
+  <label><input type="radio" name="currency" value="GBP" checked onchange="onCurrencyChange()"> £ GBP</label>&nbsp;
+  <label><input type="radio" name="currency" value="USD" onchange="onCurrencyChange()"> $ USD</label>&nbsp;
+  <label><input type="radio" name="currency" value="EUR" onchange="onCurrencyChange()"> € EUR</label>
+  <br><br>
+  <p>Select wage type:</p>
+  <div id="wageTypeRadios">
+    <label><input type="radio" name="wageType" value="hourly" checked onchange="onWageTypeChange()"> Hourly</label>
+    <label><input type="radio" name="wageType" value="monthly" onchange="onWageTypeChange()"> Monthly</label>
+    <label><input type="radio" name="wageType" value="annual" onchange="onWageTypeChange()"> Annual</label>
+  </div>
+  <div id="wageRow">
+    <div id="wageControls">
+      <div id="wageHourly" class="wageSection active">
+        Hourly wage:<br>
+        <input id="wage" type="number" step="0.01" value="12.21">
+      </div>
+      <div id="wageMonthly" class="wageSection">
+        Monthly wage:<br>
+        <input id="monthlyWage" type="number" step="1" value="2000" style="width:90px;font-family:inherit;font-weight:bold;" oninput="calcHourly()">
+        <br>Hours per week:<br>
+        <input id="monthlyHours" type="number" step="0.5" min="1" value="40" style="width:60px;font-family:inherit;font-weight:bold;" oninput="calcHourly()">
+      </div>
+      <div id="wageAnnual" class="wageSection">
+        Annual wage:<br>
+        <input id="annualWage" type="number" step="1" value="25000" style="width:100px;font-family:inherit;font-weight:bold;" oninput="calcHourly()">
+        <br>Hours per week:<br>
+        <input id="annualHours" type="number" step="0.5" min="1" value="40" style="width:60px;font-family:inherit;font-weight:bold;" oninput="calcHourly()">
+      </div>
+      <div id="hourlyCalcResult"></div>
+    </div>
+    <div id="wageInfo">
+      £12.21 per hour is the national minimum wage for workers aged 21 and over
+      and only £7.55 for under-18s and apprentices (accurate as of Feb 2026).
+    </div>
+  </div>
+  <button id="startBtn" onclick="start()">🤑 Start! 🤑</button>
+  <div style="margin-top:12px;">
+    <details id="advancedDetails" style="font-size:13px;cursor:pointer;">
+      <summary style="font-weight:bold;">Advanced</summary>
+      <div style="margin-top:8px;text-align:left;display:inline-block;">
+        <label style="display:block;cursor:pointer;">
+          <input type="checkbox" id="taxCheckbox" onchange="onTaxCheckChange()"> Tax Mode
+        </label>
+        <div id="taxInputWrap" style="display:none;margin-top:6px;font-size:12px;">
+          Tax rate: <input id="taxRate" type="number" step="1" min="0" max="100" value="20" style="width:50px;font-family:inherit;font-weight:bold;">%
+        </div>
+        <label style="display:block;margin-top:8px;cursor:pointer;">
+          <input type="checkbox" id="alreadyStartedCheckbox" onchange="onAlreadyStartedChange()"> I've already started working today
+        </label>
+        <div id="alreadyStartedWrap" style="display:none;margin-top:6px;font-size:12px;">
+          Time worked so far:
+          <input id="hoursWorked" type="number" min="0" max="23" value="0" style="width:42px;font-family:inherit;font-weight:bold;">h
+          <input id="minutesWorked" type="number" min="0" max="59" value="0" style="width:42px;font-family:inherit;font-weight:bold;">m
+        </div>
+      </div>
+    </details>
+  </div>
+</div>
+
+<div id="topBar">
+  <div id="titleText" onclick="restart()" style="cursor:pointer;">Wage Cuck</div>
+  <div style="display:flex;gap:10px;align-items:center;">
+    <div id="optionsWrap">
+      <button class="topBtn" onclick="toggleOptions()"><img src="hamburgericon.png" alt="Menu"></button>
+      <div id="optionsPanel">
+        <button class="optItem" id="restartBtn" onclick="restart()" style="display:none;">Restart</button>
+        <button class="optItem" id="audioBtn" onclick="toggleSound()">Audio Off</button>
+        <button class="optItem" onclick="toggleFullscreen()">Fullscreen</button>
+        <div class="optSep"></div>
+        <button class="optItem disabled" id="themeMoneyBtn" onclick="setTheme('money')">Money Mode</button>
+        <button class="optItem" id="themeDarkBtn" onclick="setTheme('dark')">Dark Mode</button>
+        <button class="optItem" id="themeLightBtn" onclick="setTheme('light')">Light Mode</button>
+        <div class="optSep"></div>
+        <button class="optItem" onclick="openInfo()">Info</button>
+        <button class="optItem" onclick="shareApp()">Share</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="jarScreen">
+  <div class="infoBox" id="counter"><span id="earnedLabel">You've earned</span><span id="counterAmount">£0</span><span id="cuckLabel">What a good little wage cuck.</span></div>
+  <br>
+  <canvas id="game"></canvas>
+</div>
+
+<div id="noteStack"></div>
+<div id="holdDim"></div>
+
+<div id="taxOverlay"><span>TAX</span></div>
+
+<div id="infoOverlay" onclick="if(event.target===this)closeInfo()">
+  <div id="infoBox">
+    <button id="infoCloseBtn" onclick="closeInfo()">×</button>
+    <p>Hello,</p>
+    <p>Do you earn a wage? Hourly? Monthly? Annual? Does your boss think that your time should be measured by the seconds that you spend at your dreary soul-destroying job? Then you must be... a wage cuck! That’s right, you’re a wonderful little cog in the machine called Capitalism. Your worth is determined only by the moments of your life you devote to your job. Everything else (your commute, your workplace-related health issues, your sleepless nights) is meaningless.</p>
+    <p>I built this web app to remind you of your place in the hierarchy. Put it on your phone or your desktop as a nice little timer. Maybe leave it running in the background for management to see. And don’t forget, you’re here forever!</p>
+    <p>Kind regards,</p>
+    <p>Sam</p>
+    <p style="margin-top:14px;font-size:12px;"><a href="https://www.instagram.com/samiainstevens" target="_blank">Instagram</a> · <a href="https://www.samiainstevens.com" target="_blank">samiainstevens.com</a></p>
+    <p style="font-size:10px;font-weight:normal;opacity:0.6;">© Sam Stevens 2026</p>
+  </div>
+</div>
+
+<div id="footer">
+  <a href="https://buymeacoffee.com/samiainstevens" target="_blank">Buy Me a Coffee</a>
+</div>
+
+<script>
+const CURRENCY_DATA = {
+  'GBP': { sym:'£', defaultWage:12.21, name:'pounds', singular:'pound',
+    infoHTML:'£12.21 per hour is the national minimum wage for workers aged 21 and over and only £7.55 for under-18s and apprentices (accurate as of Feb 2026).' },
+  'USD': { sym:'$', defaultWage:7.25, name:'dollars', singular:'dollar',
+    infoHTML:'$7.25 per hour is the federal minimum wage since July 2009 (accurate as of Feb 2026).' },
+  'EUR': { sym:'€', defaultWage:4.10, name:'euros', singular:'euro',
+    infoHTML:'&ldquo;In 2022, the median gross hourly earnings were €14.9 in the EU, from €4.1 in Bulgaria to €29.8 in Denmark.&rdquo; &mdash; <a href="https://ec.europa.eu/eurostat/statistics-explained/index.php?title=Wages_and_labour_costs" target="_blank">source: European Commission</a>' }
+};
+
+const NOTE_IMAGES = { GBP: 'pound.png', USD: 'dollar.png', EUR: 'euro.png' };
+const NOTE_IMG_WIDTH = 90; // approximate rendered width at 60px height
+const NOTE_OVERLAP = 6;    // px offset between stacked notes
+
+function repositionNotes() {
+  const container = document.getElementById('noteStack');
+  const imgs = container.querySelectorAll('img');
+  if (imgs.length === 0) return;
+  const availW = window.innerWidth - 20; // 10px padding each side
+  // How many notes fit per row?
+  const noteW = NOTE_OVERLAP; // each additional note adds this much width
+  const firstNoteW = NOTE_IMG_WIDTH;
+  const maxPerRow = Math.max(1, Math.floor((availW - firstNoteW) / noteW) + 1);
+  const rowH = 14; // vertical offset between rows
+  for (let i = 0; i < imgs.length; i++) {
+    const row = Math.floor(i / maxPerRow);
+    const col = i % maxPerRow;
+    imgs[i].style.left = (col * NOTE_OVERLAP) + 'px';
+    imgs[i].style.bottom = (row * rowH) + 'px';
+  }
+}
+
+function onCurrencyChange() {
+  const key  = document.querySelector('input[name="currency"]:checked').value;
+  const data = CURRENCY_DATA[key];
+  document.getElementById('wage').value = data.defaultWage.toFixed(2);
+  document.getElementById('wageInfo').innerHTML = data.infoHTML;
+  calcHourly();
+}
+
+function onWageTypeChange() {
+  const type = document.querySelector('input[name="wageType"]:checked').value;
+  document.querySelectorAll('.wageSection').forEach(el => el.classList.remove('active'));
+  if (type === 'hourly') {
+    document.getElementById('wageHourly').classList.add('active');
+    document.getElementById('hourlyCalcResult').textContent = '';
+  } else if (type === 'monthly') {
+    document.getElementById('wageMonthly').classList.add('active');
+    calcHourly();
+  } else {
+    document.getElementById('wageAnnual').classList.add('active');
+    calcHourly();
+  }
+}
+
+function calcHourly() {
+  const type = document.querySelector('input[name="wageType"]:checked').value;
+  const sym = CURRENCY_DATA[document.querySelector('input[name="currency"]:checked').value].sym;
+  const el = document.getElementById('hourlyCalcResult');
+  if (type === 'hourly') { el.textContent = ''; return; }
+  let hourly = 0;
+  if (type === 'monthly') {
+    const monthly = parseFloat(document.getElementById('monthlyWage').value) || 0;
+    const hrs = parseFloat(document.getElementById('monthlyHours').value) || 1;
+    hourly = monthly / (4.34821 * hrs);
+  } else {
+    const annual = parseFloat(document.getElementById('annualWage').value) || 0;
+    const hrs = parseFloat(document.getElementById('annualHours').value) || 1;
+    hourly = annual / (52.17857 * hrs);
+  }
+  if (hourly > 0) {
+    el.textContent = '= ' + sym + hourly.toFixed(2) + '/hr';
+  } else {
+    el.textContent = '';
+  }
+}
+
+function getEffectiveHourlyWage() {
+  const type = document.querySelector('input[name="wageType"]:checked').value;
+  if (type === 'hourly') return parseFloat(document.getElementById('wage').value) || 0;
+  if (type === 'monthly') {
+    const monthly = parseFloat(document.getElementById('monthlyWage').value) || 0;
+    const hrs = parseFloat(document.getElementById('monthlyHours').value) || 1;
+    return monthly / (4.34821 * hrs);
+  }
+  const annual = parseFloat(document.getElementById('annualWage').value) || 0;
+  const hrs = parseFloat(document.getElementById('annualHours').value) || 1;
+  return annual / (52.17857 * hrs);
+}
+
+function shareApp() {
+  const url = 'https://www.samiainstevens.com/wagecuck';
+  const text = 'Wage Cuck - watch your earnings in real time!';
+  if (navigator.share) {
+    navigator.share({ title: 'Wage Cuck', text: text, url: url }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(url).then(() => {
+      alert('Link copied to clipboard!');
+    }).catch(() => {
+      window.open(url, '_blank');
+    });
+  }
+}
+
+/* ── Sound ─────────────────────────────────────────────────────────────────── */
+let soundEnabled = false;
+let audioCtx = null;
+let coinSoundBuffer = null;
+let manyCoinsSoundBuffer = null;
+let coinAudioEl = null;      // fallback HTML5 Audio element
+let manyCoinsAudioEl = null; // fallback for many coins sound
+let lastSoundTime = 0;
+
+async function initAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  try {
+    if (audioCtx.state === 'suspended') await audioCtx.resume();
+    const [resp1, resp2] = await Promise.all([
+      fetch('coindropsound.mp3'),
+      fetch('manycoinssound.mp3')
+    ]);
+    if (!resp1.ok) throw new Error('coindropsound fetch failed: ' + resp1.status);
+    const ab1 = await resp1.arrayBuffer();
+    coinSoundBuffer = await audioCtx.decodeAudioData(ab1);
+    if (resp2.ok) {
+      const ab2 = await resp2.arrayBuffer();
+      manyCoinsSoundBuffer = await audioCtx.decodeAudioData(ab2);
+    }
+    console.log('Audio loaded via Web Audio API');
+  } catch(e) {
+    console.warn('Web Audio fetch/decode failed, trying HTML5 Audio fallback:', e);
+    try {
+      coinAudioEl = new Audio('coindropsound.mp3');
+      coinAudioEl.preload = 'auto';
+      coinAudioEl.volume = 0.5;
+      await new Promise((resolve, reject) => {
+        coinAudioEl.addEventListener('canplaythrough', resolve, { once: true });
+        coinAudioEl.addEventListener('error', reject, { once: true });
+        coinAudioEl.load();
+      });
+      console.log('Audio loaded via HTML5 Audio fallback');
+    } catch(e2) {
+      console.warn('HTML5 Audio fallback also failed:', e2);
+      coinAudioEl = null;
+    }
+    try {
+      manyCoinsAudioEl = new Audio('manycoinssound.mp3');
+      manyCoinsAudioEl.preload = 'auto';
+      manyCoinsAudioEl.volume = 0.5;
+      manyCoinsAudioEl.load();
+    } catch(e3) {
+      manyCoinsAudioEl = null;
+    }
+  }
+}
+
+function playLandSound(vol) {
+  if (!soundEnabled) return;
+  // Rate-limit to avoid audio crackling from many simultaneous coins
+  const now = performance.now();
+  if (now - lastSoundTime < 50) return;
+  lastSoundTime = now;
+  vol = Math.min(1, Math.max(0.05, vol));
+  if (audioCtx && coinSoundBuffer) {
+    // Web Audio API path (best quality, polyphonic)
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const src  = audioCtx.createBufferSource();
+    const gain = audioCtx.createGain();
+    gain.gain.value = vol;
+    src.buffer = coinSoundBuffer;
+    src.connect(gain);
+    gain.connect(audioCtx.destination);
+    src.start(0);
+  } else if (coinAudioEl) {
+    // HTML5 Audio fallback (works on file:// protocol)
+    const clone = coinAudioEl.cloneNode();
+    clone.volume = vol * 0.6;
+    clone.play().catch(() => {});
+  } else if (audioCtx) {
+    playFallbackSound(vol);
+  }
+}
+
+function playFallbackSound(vol) {
+  if (!audioCtx) return;
+  const sr = audioCtx.sampleRate;
+  const len = Math.floor(sr * 0.055);
+  const buf = audioCtx.createBuffer(1, len, sr);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) {
+    const t = i / sr;
+    const env = Math.pow(1 - i / len, 6);
+    // Metallic coin ping: two high-frequency tones + noise
+    const ping = Math.sin(2 * Math.PI * 4200 * t) * 0.25
+               + Math.sin(2 * Math.PI * 6500 * t) * 0.12
+               + Math.sin(2 * Math.PI * 2000 * t) * 0.08;
+    const noise = (Math.random() * 2 - 1) * 0.12;
+    data[i] = (ping + noise) * env;
+  }
+  const src = audioCtx.createBufferSource();
+  const g = audioCtx.createGain();
+  g.gain.value = vol * 0.45;
+  src.buffer = buf; src.connect(g); g.connect(audioCtx.destination); src.start();
+}
+
+function playManyCoinsSound(vol) {
+  if (!soundEnabled) return;
+  vol = Math.min(1, Math.max(0.1, vol));
+  if (audioCtx && manyCoinsSoundBuffer) {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const src = audioCtx.createBufferSource();
+    const gain = audioCtx.createGain();
+    gain.gain.value = vol;
+    src.buffer = manyCoinsSoundBuffer;
+    src.connect(gain);
+    gain.connect(audioCtx.destination);
+    src.start(0);
+  } else if (manyCoinsAudioEl) {
+    const clone = manyCoinsAudioEl.cloneNode();
+    clone.volume = vol * 0.6;
+    clone.play().catch(() => {});
+  }
+}
+
+async function toggleSound() {
+  soundEnabled = !soundEnabled;
+  document.getElementById('audioBtn').textContent = soundEnabled ? 'Audio On' : 'Audio Off';
+  if (soundEnabled) {
+    await initAudio();
+    if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
+  }
+}
+
+let optionsOpenedByHover = false;
+function toggleOptions() {
+  const wrap = document.getElementById('optionsWrap');
+  if (wrap.classList.contains('open') && optionsOpenedByHover) {
+    // If it was opened by hover, a click pins it open
+    optionsOpenedByHover = false;
+    return;
+  }
+  wrap.classList.toggle('open');
+  optionsOpenedByHover = false;
+}
+// Close options when clicking outside
+document.addEventListener('click', function(e) {
+  const wrap = document.getElementById('optionsWrap');
+  if (wrap && !wrap.contains(e.target)) {
+    wrap.classList.remove('open');
+    optionsOpenedByHover = false;
+  }
+});
+// Hover open/close
+document.addEventListener('DOMContentLoaded', function() {
+  const wrap = document.getElementById('optionsWrap');
+  if (!wrap) return;
+  let hoverTimer = null;
+  wrap.addEventListener('mouseenter', function() {
+    clearTimeout(hoverTimer);
+    if (!wrap.classList.contains('open')) {
+      wrap.classList.add('open');
+      optionsOpenedByHover = true;
+    }
+  });
+  wrap.addEventListener('mouseleave', function() {
+    if (optionsOpenedByHover) {
+      hoverTimer = setTimeout(function() {
+        wrap.classList.remove('open');
+        optionsOpenedByHover = false;
+      }, 200);
+    }
+  });
+});
+
+let currentTheme = 'money';
+function setTheme(theme) {
+  currentTheme = theme;
+  document.body.classList.remove('darkMode', 'lightMode');
+  if (theme === 'dark') document.body.classList.add('darkMode');
+  else if (theme === 'light') document.body.classList.add('lightMode');
+  updateThemeButtons();
+}
+
+/* ── Tax Mode ──────────────────────────────────────────────────────────────── */
+let taxEnabled = false;
+let taxRate = 0.20;
+let taxPaused = false;   // true while TAX animation is playing
+let taxPhase = '';       // 'show' | 'flash' | 'remove' | 'shake'
+let taxPhaseStart = 0;
+let taxAlreadyHit = false; // true after tax taken at 100 coins; next 100 clears
+
+function onTaxCheckChange() {
+  const checked = document.getElementById('taxCheckbox').checked;
+  document.getElementById('taxInputWrap').style.display = checked ? 'block' : 'none';
+}
+
+function onAlreadyStartedChange() {
+  const checked = document.getElementById('alreadyStartedCheckbox').checked;
+  document.getElementById('alreadyStartedWrap').style.display = checked ? 'block' : 'none';
+}
+
+function toggleTaxMode() {
+  taxEnabled = !taxEnabled;
+}
+
+function startTaxSequence() {
+  taxPaused = true;
+  taxPhase = 'show';
+  taxPhaseStart = performance.now();
+  document.getElementById('taxOverlay').classList.add('show');
+  // Mark taxRate% of coins for flashing
+  const numToTax = Math.max(1, Math.round(coins.length * taxRate));
+  const indices = [];
+  for (let i = 0; i < coins.length; i++) indices.push(i);
+  // Shuffle and pick
+  for (let i = indices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [indices[i], indices[j]] = [indices[j], indices[i]];
+  }
+  for (let k = 0; k < numToTax; k++) {
+    coins[indices[k]].taxMarked = true;
+  }
+}
+
+function updateTaxSequence() {
+  const elapsed = performance.now() - taxPhaseStart;
+  if (taxPhase === 'show') {
+    // Show "TAX" for 1 second
+    if (elapsed >= 1000) {
+      taxPhase = 'flash';
+      taxPhaseStart = performance.now();
+      document.getElementById('taxOverlay').classList.remove('show');
+      // Start flashing marked coins
+      for (const c of coins) {
+        if (c.taxMarked) {
+          c.taxFlashing = true;
+          c.taxFlashStart = performance.now();
+        }
+      }
+    }
+  } else if (taxPhase === 'flash') {
+    // Flash for 1 second then remove
+    if (elapsed >= 1000) {
+      taxPhase = 'remove';
+      taxPhaseStart = performance.now();
+      // Remove taxed coins + deduct from counter
+      const removed = coins.filter(c => c.taxMarked);
+      coins = coins.filter(c => !c.taxMarked);
+      displayCents -= removed.length;
+      if (displayCents < 0) displayCents = 0;
+      updateCounterDisplay();
+      updateNoteStack();
+      // Shake remaining coins
+      for (const c of coins) {
+        c.vx += (Math.random() - 0.5) * 3.0;
+        c.vy -= Math.random() * 2.0 + 0.5;
+        c.spin += (Math.random() - 0.5) * 0.3;
+        c.settled = false;
+        c.restFrames = 0;
+      }
+    }
+  } else if (taxPhase === 'remove') {
+    // Brief pause (0.5s) then resume
+    if (elapsed >= 500) {
+      taxPaused = false;
+      taxPhase = '';
+    }
+  }
+}
+
+function updateCounterDisplay() {
+  const amount = (displayCents / 100).toFixed(2);
+  const formatted = currency + amount;
+  const el = document.getElementById('counter');
+  const amountEl = document.getElementById('counterAmount');
+  const wholeDollars = Math.floor(displayCents / 100);
+  const lol = formatted.endsWith('0.69') ? ' lol' : '';
+  amountEl.textContent = formatted + lol;
+  if (wholeDollars >= 1) {
+    el.classList.add('full');
+  } else {
+    el.classList.remove('full');
+  }
+}
+
+function updateNoteStack() {
+  const wholeDollars = Math.floor(displayCents / 100);
+  const container = document.getElementById('noteStack');
+  // Add notes
+  while (noteCount < wholeDollars) {
+    const img = document.createElement('img');
+    img.src = NOTE_IMAGES[selectedCurrencyKey];
+    container.appendChild(img);
+    noteCount++;
+  }
+  // Remove notes if count dropped (e.g. tax)
+  while (noteCount > wholeDollars) {
+    noteCount--;
+    if (container.lastChild) container.removeChild(container.lastChild);
+  }
+  repositionNotes();
+}
+
+function openInfo() {
+  document.getElementById('infoOverlay').classList.add('open');
+}
+function closeInfo() {
+  document.getElementById('infoOverlay').classList.remove('open');
+}
+
+function tryTaxCoin() {
+  // Old per-coin tax removed; tax now happens at 100 coins
+}
+function updateThemeButtons() {
+  const ids = { money: 'themeMoneyBtn', dark: 'themeDarkBtn', light: 'themeLightBtn' };
+  for (const [key, id] of Object.entries(ids)) {
+    const btn = document.getElementById(id);
+    if (key === currentTheme) { btn.classList.add('disabled'); }
+    else { btn.classList.remove('disabled'); }
+  }
+}
+
+function toggleFullscreen() {
+  if (!document.fullscreenElement && document.getElementById('jarScreen').style.display !== 'none') {
+    document.documentElement.requestFullscreen().catch(err => {
+      console.warn('Fullscreen request failed:', err);
+    });
+  } else if (document.fullscreenElement) {
+    document.exitFullscreen().catch(err => {
+      console.warn('Exit fullscreen failed:', err);
+    });
+  }
+}
+
+/* ── Canvas & images ───────────────────────────────────────────────────────── */
+const canvas    = document.getElementById("game");
+const ctx       = canvas.getContext("2d", { alpha: true });
+const coinImage = new Image(); coinImage.src = "coin.png";
+
+const COIN_SPR_R = 5;
+
+let scale   = 1;
+let coinR   = COIN_SPR_R;
+let cvH     = 256;
+
+function getWalls(cy) {
+  return {
+    left : 0,
+    right: canvas.width,
+    floor: canvas.height
+  };
+}
+
+function clamp(v,lo,hi){ return v<lo?lo:v>hi?hi:v; }
+
+function resizeCanvas() {
+  // Size coins so 100 can fit: coinR = sqrt(area * packing) / 20
+  const oldCoinR = coinR;
+  const area = window.innerWidth * window.innerHeight;
+  const newCoinR = Math.max(8, Math.min(80, Math.sqrt(area * 0.55) / 20));
+  const oldW = canvas.width;
+  const oldH = canvas.height;
+  coinR = newCoinR;
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+  cvH = canvas.height;
+  // Scale coin positions proportionally on resize & unsettle so gravity acts
+  if (oldW > 1 && oldH > 1 && coins.length > 0) {
+    const sx = canvas.width / oldW;
+    const sy = canvas.height / oldH;
+    for (const c of coins) {
+      c.x *= sx;
+      c.y *= sy;
+      c.settled = false;
+      c.restFrames = 0;
+    }
+  }
+  ctx.imageSmoothingEnabled = false;
+}
+window.addEventListener("resize", function() { resizeCanvas(); repositionNotes(); });
+
+// Hold-to-shake: track hold duration, shake on release with strength based on hold time
+let holdActive = false;
+let holdStart = 0;
+let holdDimTimer = null;
+
+// Coin dragging
+let dragCoin = null;
+let dragOffX = 0, dragOffY = 0;
+let dragPrevX = 0, dragPrevY = 0;
+
+function isUITarget(e) {
+  return e.target.closest('#topBar, #optionsPanel, #startScreen, #footer, #infoOverlay, button, a, input, label, details, summary');
+}
+
+function getCoinAtPos(px, py) {
+  // Find topmost (last drawn) coin under pointer
+  for (let i = coins.length - 1; i >= 0; i--) {
+    const c = coins[i];
+    const dx = px - c.x, dy = py - c.y;
+    if (dx * dx + dy * dy <= coinR * coinR) return c;
+  }
+  return null;
+}
+
+function startHold(e) {
+  if (!running || coins.length === 0) return;
+  if (isUITarget(e)) return;
+  const px = e.clientX !== undefined ? e.clientX : e.pageX;
+  const py = e.clientY !== undefined ? e.clientY : e.pageY;
+  // Check if clicking on a coin to drag it
+  const hit = getCoinAtPos(px, py);
+  if (hit) {
+    dragCoin = hit;
+    dragCoin.settled = false;
+    dragCoin.restFrames = 0;
+    dragOffX = hit.x - px;
+    dragOffY = hit.y - py;
+    dragPrevX = px;
+    dragPrevY = py;
+    return; // dragging, don't start hold-shake
+  }
+  holdActive = true;
+  holdStart = performance.now();
+  // Dim after 3 seconds of holding
+  holdDimTimer = setTimeout(function() {
+    if (holdActive) document.getElementById('holdDim').classList.add('show');
+  }, 3000);
+}
+
+function onMove(e) {
+  if (!dragCoin) return;
+  const px = e.clientX !== undefined ? e.clientX : e.pageX;
+  const py = e.clientY !== undefined ? e.clientY : e.pageY;
+  dragCoin.x = px + dragOffX;
+  dragCoin.y = py + dragOffY;
+  dragCoin.vx = (px - dragPrevX) * 0.5;
+  dragCoin.vy = (py - dragPrevY) * 0.5;
+  dragCoin.settled = false;
+  dragCoin.restFrames = 0;
+  dragPrevX = px;
+  dragPrevY = py;
+}
+
+function endHold() {
+  if (dragCoin) {
+    // Fling coin with last velocity and reset sound so it plays on landing
+    dragCoin.hasPlayedSound = false;
+    dragCoin.settled = false;
+    dragCoin.restFrames = 0;
+    dragCoin = null;
+    return;
+  }
+  if (!holdActive) return;
+  const elapsed = (performance.now() - holdStart) / 1000;
+  holdActive = false;
+  holdStart = 0;
+  clearTimeout(holdDimTimer);
+  document.getElementById('holdDim').classList.remove('show');
+  // Shake coins on release — 1x for quick tap, ramps to 15x at 3s hold
+  if (!running || coins.length === 0) return;
+  const mult = elapsed <= 0.3 ? 1 : Math.min(15, 1 + (elapsed - 0.3) * (14 / 2.7));
+  for (const c of coins) {
+    c.vx += (Math.random() - 0.5) * 3.0 * mult;
+    c.vy -= (Math.random() * 2.0 + 0.5) * mult;
+    c.spin += (Math.random() - 0.5) * 0.3 * mult;
+    c.settled = false;
+    c.restFrames = 0;
+  }
+  // Play many coins sound — near-instant for taps, slight delay for big shakes
+  const delay = Math.min(500, 50 + mult * 30);
+  setTimeout(function() { playManyCoinsSound(Math.min(1, 0.3 + mult * 0.05)); }, delay);
+}
+
+document.addEventListener('mousedown', startHold);
+document.addEventListener('mousemove', onMove);
+document.addEventListener('mouseup', endHold);
+document.addEventListener('touchstart', function(e) { startHold(e.touches[0] || e); }, { passive: true });
+document.addEventListener('touchmove', function(e) { if (dragCoin) { e.preventDefault(); onMove(e.touches[0] || e); } }, { passive: false });
+document.addEventListener('touchend', endHold);
+document.addEventListener('touchcancel', endHold);
+
+/* ── Physics constants ─────────────────────────────────────────────────────── */
+const SUBSTEPS       = 5;         // physics sub-steps per frame
+const GRAVITY        = 0.28;      // total gravity per frame (split across substeps)
+const RESTITUTION_WALL  = 0.30;   // bounciness off jar walls
+const RESTITUTION_FLOOR = 0.22;   // bounciness off jar floor (lower = lands and rolls instead of bouncing)
+const RESTITUTION_COIN  = 0.35;   // bounciness between coins
+const FRICTION_FLOOR = 0.008;     // floor sliding friction (additive deceleration per substep)
+const FRICTION_COIN  = 0.10;      // friction between coins
+const AIR_DAMP       = 0.999;     // per-substep velocity damping
+const POS_ITERS      = 8;         // position solver iterations per substep
+const SETTLE_SPEED   = 0.06;      // coins settle when total speed < this
+const SETTLE_FRAMES  = 12;        // must be slow for this many consecutive frames
+const WAKE_THRESHOLD = 0.8;       // impact speed needed to wake a settled coin
+const MARGIN_SP      = 1;         // pixel margin from jar walls/floor
+
+/* ── App state ─────────────────────────────────────────────────────────────── */
+let coins = [], totalEarnedCents=0, pennyBucket=0, displayCents=0;
+let noteCount = 0;
+let penniesPerSecond=0, currency='£';
+let selectedCurrencyKey = 'GBP';
+let animationId=null, lastTimestamp=null, running=false;
+
+async function start() {
+  const key  = document.querySelector('input[name="currency"]:checked').value;
+  const data = CURRENCY_DATA[key];
+  currency   = data.sym;
+  selectedCurrencyKey = key;
+  const wage = getEffectiveHourlyWage();
+  penniesPerSecond = (wage * 100) / 3600;
+  document.getElementById("startScreen").style.display = "none";
+  document.getElementById("jarScreen").style.display   = "block";
+  document.getElementById("restartBtn").style.display = "block";
+  // Tax mode
+  taxEnabled = document.getElementById('taxCheckbox').checked;
+  taxRate = (parseFloat(document.getElementById('taxRate').value) || 20) / 100;
+  resizeCanvas();
+  // "Already started" catch-up
+  if (document.getElementById('alreadyStartedCheckbox').checked) {
+    const hrs = parseFloat(document.getElementById('hoursWorked').value) || 0;
+    const mins = parseFloat(document.getElementById('minutesWorked').value) || 0;
+    const totalSecs = hrs * 3600 + mins * 60;
+    const grossCents = Math.floor(penniesPerSecond * totalSecs);
+    // Apply tax if tax mode enabled
+    let netCents = grossCents;
+    if (taxEnabled && taxRate > 0) {
+      netCents = Math.floor(grossCents * (1 - taxRate));
+    }
+    if (netCents > 0) {
+      totalEarnedCents += netCents;
+      displayCents += netCents;
+      updateCounterDisplay();
+      updateNoteStack();
+      // The remainder cents (fractional dollar) drop as coins
+      const remainderCents = netCents % 100;
+      const coinsToSpawn = Math.min(remainderCents, 80);
+      for (let i = 0; i < coinsToSpawn; i++) {
+        spawnCoinSilent();
+      }
+    }
+  }
+  running=true; lastTimestamp=null;
+  // Pre-load audio so it's ready when user enables sound via button
+  await initAudio();
+  animationId = requestAnimationFrame(loop);
+}
+
+function restart() {
+  running=false; cancelAnimationFrame(animationId);
+  coins=[]; totalEarnedCents=0; pennyBucket=0; displayCents=0; noteCount=0; lastTimestamp=null;
+  taxPaused=false; taxPhase=''; taxAlreadyHit=false;
+  document.getElementById('taxOverlay').classList.remove('show');
+  document.getElementById("counterAmount").textContent = currency+"0";
+  document.getElementById("counter").classList.remove('full');
+  document.getElementById('noteStack').innerHTML = '';
+  document.getElementById("jarScreen").style.display  ="none";
+  document.getElementById("restartBtn").style.display = "none";
+  taxEnabled = false;
+  document.getElementById("startScreen").style.display="block";
+}
+
+/* ── Spawn ─────────────────────────────────────────────────────────────────── */
+function spawnCoin() {
+  const left = coinR;
+  const right = canvas.width - coinR;
+  const maxAttempts = 8;
+  let x = left + Math.random() * (right - left);
+  // avoid spawning directly overlapping other coins
+  for (let a=0; a<maxAttempts; a++) {
+    let coll=false;
+    for (const c of coins) {
+      const dx = c.x - x, dy = c.y - (-coinR);
+      if (dx*dx + dy*dy < (coinR*2+2)*(coinR*2+2)) { coll=true; break; }
+    }
+    if (!coll) break;
+    x = left + Math.random() * (right - left);
+  }
+  coins.push({
+    x: x,
+    y: -coinR - Math.random()*(20*scale),
+    vx: (Math.random()-0.5)*1.8,
+    vy: 0.5 + Math.random()*0.4,
+    angle: Math.random()*Math.PI*2,
+    spin:  (Math.random()-0.5)*0.20 + (Math.random() > 0.5 ? 0.04 : -0.04),
+    settled: false,
+    restFrames: 0,
+    hasPlayedSound: false
+  });
+  // Tick the counter in sync with each coin drop
+  displayCents++;
+  updateCounterDisplay();
+  updateNoteStack();
+}
+
+// Silent spawn for catch-up (no counter increment, no tax roll)
+function spawnCoinSilent() {
+  const left = coinR;
+  const right = canvas.width - coinR;
+  const x = left + Math.random() * (right - left);
+  coins.push({
+    x: x,
+    y: -coinR - Math.random() * (40 * scale),
+    vx: (Math.random() - 0.5) * 1.8,
+    vy: 0.5 + Math.random() * 0.4,
+    angle: Math.random() * Math.PI * 2,
+    spin: (Math.random() - 0.5) * 0.20 + (Math.random() > 0.5 ? 0.04 : -0.04),
+    settled: false,
+    restFrames: 0,
+    hasPlayedSound: true // suppress landing sound for catch-up coins
+  });
+}
+
+/* ── Physics ───────────────────────────────────────────────────────────────── */
+function updatePhysics() {
+  const subGrav = GRAVITY / SUBSTEPS;
+  const n = coins.length;
+
+  for (let step = 0; step < SUBSTEPS; step++) {
+
+    // ── 1. SAVE POSITIONS ───────────────────────────────────────────────────
+    for (let i = 0; i < n; i++) {
+      const c = coins[i];
+      c.px = c.x;
+      c.py = c.y;
+    }
+
+    // ── 2. INTEGRATE (gravity + predict position) ───────────────────────────
+    for (let i = 0; i < n; i++) {
+      const c = coins[i];
+      if (c.settled) continue;
+      c.vy += subGrav;
+      c.x += c.vx;
+      c.y += c.vy;
+    }
+
+    // ── 3. SOLVE POSITION CONSTRAINTS ───────────────────────────────────────
+    for (let iter = 0; iter < POS_ITERS; iter++) {
+
+      // 3a. Coin-coin overlap
+      for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) {
+          const a = coins[i], b = coins[j];
+          if (a.settled && b.settled) continue;
+          const dx = b.x - a.x, dy = b.y - a.y;
+          const dist2 = dx * dx + dy * dy;
+          const minDist = coinR * 2;
+          if (dist2 >= minDist * minDist) continue;
+          if (dist2 < 0.01) {
+            b.x += (Math.random() - 0.5) * 2;
+            b.y -= 1;
+            continue;
+          }
+
+          const dist = Math.sqrt(dist2);
+          const nx = dx / dist, ny = dy / dist;
+          const overlap = minDist - dist;
+
+          const imA = a.settled ? 0 : 1;
+          const imB = b.settled ? 0 : 1;
+          const imSum = imA + imB;
+          if (imSum < 0.001) continue;
+
+          // ── Anti-stacking ──
+          // A real ball on top of a curved ball is in UNSTABLE equilibrium.
+          // Any tiny perturbation causes it to roll off. We model this by
+          // adding a random horizontal push when contact is steep (vertical).
+          let pushX = nx * overlap;
+          let pushY = ny * overlap;
+          if (Math.abs(ny) > 0.5) {
+            const instability = overlap * 0.7 * (Math.abs(ny) - 0.5) * 2;
+            const randDir = (Math.random() < 0.5) ? -1 : 1;
+            pushX += randDir * instability;
+          }
+
+          a.x -= pushX * imA / imSum;
+          a.y -= pushY * imA / imSum;
+          b.x += pushX * imB / imSum;
+          b.y += pushY * imB / imSum;
+        }
+      }
+
+      // 3b. Jar wall/floor clamping
+      for (let i = 0; i < n; i++) {
+        const c = coins[i];
+        const w = getWalls(c.y);
+        const minX = w.left + coinR;
+        const maxX = w.right - coinR;
+        const maxY = w.floor - coinR;
+        if (c.x < minX) c.x = minX;
+        if (c.x > maxX) c.x = maxX;
+        if (c.y > maxY) c.y = maxY;
+
+
+      }
+    }
+
+    // ── 4. DERIVE VELOCITIES (hybrid PBD + impulse) ──────────────────────
+    // Use position deltas to detect collisions, but apply the correction
+    // as an IMPULSE on top of existing velocity rather than replacing it.
+    // This preserves horizontal momentum through floor contacts.
+    for (let i = 0; i < n; i++) {
+      const c = coins[i];
+      if (c.settled) continue;
+
+      // What position change did the solver produce vs what integration predicted?
+      const predictedX = c.px + c.vx;
+      const predictedY = c.py + c.vy;
+      const correctionX = c.x - predictedX; // how far the solver pushed us
+      const correctionY = c.y - predictedY;
+      const corrMag = Math.sqrt(correctionX * correctionX + correctionY * correctionY);
+
+      if (corrMag > 0.01) {
+        // A collision happened - apply correction as velocity impulse.
+        // Use a soft scale that ramps up with correction magnitude
+        // to prevent small accumulated overlaps from exploding into jumps.
+        const softScale = Math.min(corrMag, 1.5) / Math.max(corrMag, 0.01);
+        const impulseScale = (1 + RESTITUTION_COIN) * softScale * 0.5;
+        // Cap the impulse to prevent chain-reaction jumps
+        const impX = correctionX * impulseScale;
+        const impY = correctionY * impulseScale;
+        const impMag = Math.sqrt(impX * impX + impY * impY);
+        const maxImp = 2.5;
+        if (impMag > maxImp) {
+          const s = maxImp / impMag;
+          c.vx += impX * s;
+          c.vy += impY * s;
+        } else {
+          c.vx += impX;
+          c.vy += impY;
+        }
+      }
+      // Otherwise: velocity is unchanged, preserving inertia
+
+      // Air damping
+      c.vx *= AIR_DAMP;
+      c.vy *= AIR_DAMP;
+
+      // Velocity cap to prevent glitchy behavior from large corrections
+      const maxSpd = 6;
+      c.vx = Math.max(-maxSpd, Math.min(maxSpd, c.vx));
+      c.vy = Math.max(-maxSpd, Math.min(maxSpd, c.vy));
+    }
+
+    // ── 5. WALL / FLOOR VELOCITY RESPONSE ───────────────────────────────────
+    for (let i = 0; i < n; i++) {
+      const c = coins[i];
+      if (c.settled) continue;
+      const w = getWalls(c.y);
+      const minX = w.left + coinR;
+      const maxX = w.right - coinR;
+      const maxY = w.floor - coinR;
+
+      // Wall bounce
+      if (c.x <= minX + 0.01 && c.vx < 0) {
+        c.vx *= -RESTITUTION_WALL;
+        if (!c.hasPlayedSound) { c.hasPlayedSound = true; playLandSound(Math.min(1.0, Math.abs(c.vx) / 4)); }
+      }
+      if (c.x >= maxX - 0.01 && c.vx > 0) {
+        c.vx *= -RESTITUTION_WALL;
+        if (!c.hasPlayedSound) { c.hasPlayedSound = true; playLandSound(Math.min(1.0, Math.abs(c.vx) / 4)); }
+      }
+
+      // Floor collision - proper tangential friction impulse for rolling
+      if (c.y >= maxY - 0.01) {
+        if (c.vy > 0.3) {
+          if (!c.hasPlayedSound) { c.hasPlayedSound = true; playLandSound(Math.min(1.0, c.vy / 6)); }
+
+          // ── Tangential friction impulse (creates rolling at impact) ──
+          // Contact slip = surface velocity of coin at contact point
+          // For a disk: v_surface = vx - spin * R
+          // Friction impulse resolves this slip, changing BOTH vx and spin.
+          // For I = 0.5mR²: full resolution requires j = slip / 3
+          const slip = c.vx - c.spin * coinR;
+          const j = slip * 0.6; // resolve 60% of slip (some remains)
+          c.vx   -= j / 1.5;          // linear impulse: Δv = -j/m (m=1)
+          c.spin += j / (coinR * 0.75); // angular impulse: Δω = j·R/I
+
+          c.vy *= -RESTITUTION_FLOOR;
+        } else {
+          c.vy = 0;
+          // Continuous rolling friction when sitting on floor
+          const slip = c.vx - c.spin * coinR;
+          c.vx   -= slip * 0.4;
+          c.spin += slip / (coinR * 0.75) * 0.4;
+        }
+        // Very gentle additive sliding friction
+        if (Math.abs(c.vx) > FRICTION_FLOOR) {
+          c.vx -= Math.sign(c.vx) * FRICTION_FLOOR;
+        }
+      }
+
+
+    }
+
+    // ── 6. ROLLING & SPIN ───────────────────────────────────────────────────
+    // Rolling = angle tracks horizontal motion. We use the no-slip condition:
+    //   v_contact = vx - spin * R = 0  →  spin = vx / R
+    // Near the floor, we drive toward this condition immediately.
+    // In the air, spin decays slowly (preserving angular momentum).
+    for (let i = 0; i < n; i++) {
+      const c = coins[i];
+      if (c.settled) continue;
+      const w = getWalls(c.y);
+      const maxY = w.floor - coinR;
+      // Wider floor detection: within 2px counts as "on floor"
+      // so rolling persists during small bounces
+      const nearFloor = c.y >= maxY - 2.0;
+      const atLeftWall  = c.x <= w.left + coinR + 0.5;
+      const atRightWall = c.x >= w.right - coinR - 0.5;
+
+      if (nearFloor) {
+        // NEAR/ON FLOOR: enforce rolling constraint directly.
+        // Spin tracks horizontal velocity. This is the visual rolling.
+        c.spin = c.vx / coinR;
+        c.angle += c.spin;
+        // Very gentle rolling resistance
+        c.vx   *= 0.9992;
+        c.spin = c.vx / coinR; // keep in sync
+      } else if (atLeftWall || atRightWall) {
+        // ON WALL: spin couples to vy for vertical rolling
+        const wallDir = atLeftWall ? 1 : -1;
+        c.spin = c.vy / coinR * wallDir * 0.5;
+        c.angle += c.spin;
+      } else {
+        // IN AIR: spin decays slowly (preserving angular momentum)
+        c.spin *= 0.97;
+        c.angle += c.spin;
+      }
+    }
+
+    // ── 6b. COIN-COIN TANGENTIAL FRICTION ────────────────────────────────────
+    // When coins touch, tangential friction transfers spin between them.
+    // This makes coins roll across each other instead of sliding.
+    for (let i = 0; i < n; i++) {
+      for (let j = i + 1; j < n; j++) {
+        const a = coins[i], b = coins[j];
+        if (a.settled && b.settled) continue;
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const dist2 = dx * dx + dy * dy;
+        const touchDist = coinR * 2 + 0.5;
+        if (dist2 >= touchDist * touchDist) continue;
+        const dist = Math.sqrt(dist2) || 1;
+        const nx = dx / dist, ny = dy / dist;
+        const tx = -ny, ty = nx; // tangent direction
+
+        // Relative tangential velocity at contact point
+        // v_contact = v_center + ω × r (in 2D: v_tangent = vx*tx + vy*ty + spin*R)
+        const relTanA = (a.vx * tx + a.vy * ty) + a.spin * coinR;
+        const relTanB = (b.vx * tx + b.vy * ty) - b.spin * coinR;
+        const slipSpeed = relTanA - relTanB;
+
+        // Apply friction impulse to reduce slip
+        const fricStrength = FRICTION_COIN * 0.4;
+        const impulse = slipSpeed * fricStrength;
+
+        const imA = a.settled ? 0 : 1;
+        const imB = b.settled ? 0 : 1;
+        const imSum = imA + imB;
+        if (imSum < 0.001) continue;
+
+        if (imA > 0) {
+          a.vx   -= impulse * tx * imA / imSum;
+          a.vy   -= impulse * ty * imA / imSum;
+          a.spin -= impulse / coinR * imA / imSum;
+        }
+        if (imB > 0) {
+          b.vx   += impulse * tx * imB / imSum;
+          b.vy   += impulse * ty * imB / imSum;
+          b.spin -= impulse / coinR * imB / imSum;
+        }
+      }
+    }
+
+    // ── 7. COIN-COIN IMPACT SOUND (once per coin, first collision only) ─────
+    for (let i = 0; i < n; i++) {
+      for (let j = i + 1; j < n; j++) {
+        const a = coins[i], b = coins[j];
+        if (a.hasPlayedSound && b.hasPlayedSound) continue;
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const dist2 = dx * dx + dy * dy;
+        if (dist2 >= (coinR * 2 + 1) * (coinR * 2 + 1)) continue;
+        const relVx = a.vx - b.vx, relVy = a.vy - b.vy;
+        const relSpd = Math.sqrt(relVx * relVx + relVy * relVy);
+        if (relSpd > 0.5) {
+          if (!a.hasPlayedSound) { a.hasPlayedSound = true; playLandSound(Math.min(1.0, relSpd / 8)); }
+          if (!b.hasPlayedSound) { b.hasPlayedSound = true; playLandSound(Math.min(1.0, relSpd / 8)); }
+        }
+      }
+    }
+
+    // ── 8. WAKE SETTLED COINS ON STRONG IMPACT ──────────────────────────────
+    for (let i = 0; i < n; i++) {
+      if (!coins[i].settled) continue;
+      for (let j = 0; j < n; j++) {
+        if (j === i || coins[j].settled) continue;
+        const dx = coins[j].x - coins[i].x, dy = coins[j].y - coins[i].y;
+        const dist2 = dx * dx + dy * dy;
+        if (dist2 >= (coinR * 2 + 1) * (coinR * 2 + 1)) continue;
+        const relSpd = Math.sqrt(coins[j].vx * coins[j].vx + coins[j].vy * coins[j].vy);
+        if (relSpd > WAKE_THRESHOLD) {
+          coins[i].settled = false;
+          coins[i].restFrames = 0;
+          const dist = Math.sqrt(dist2) || 1;
+          coins[i].vx = (coins[i].x - coins[j].x) / dist * relSpd * 0.1;
+          coins[i].vy = (coins[i].y - coins[j].y) / dist * relSpd * 0.1;
+        }
+      }
+    }
+  }
+
+  // ── 9. SETTLING ──────────────────────────────────────────────────────────
+  for (let i = 0; i < n; i++) {
+    const c = coins[i];
+    if (c.settled) continue;
+    const speed = Math.sqrt(c.vx * c.vx + c.vy * c.vy);
+    // Only kill spin when BOTH velocity and spin are negligible
+    if (speed < SETTLE_SPEED && Math.abs(c.spin) < 0.002) c.spin = 0;
+    if (speed > SETTLE_SPEED) { c.restFrames = 0; continue; }
+
+    // Stability: on floor, OR in a valley (2+ supports from both sides),
+    // OR against a wall with 1+ support below.
+    // A single coin below with NO wall = UNSTABLE (slides off).
+    const w = getWalls(c.y);
+    const onFloor = (c.y >= w.floor - coinR - 1.0);
+    const atWall = (c.x <= w.left + coinR + 1.0) || (c.x >= w.right - coinR - 1.0);
+
+    let supportCount = 0, hasLeft = false, hasRight = false;
+    for (let j = 0; j < n; j++) {
+      if (j === i || !coins[j].settled) continue;
+      const dx = coins[j].x - c.x, dy = coins[j].y - c.y;
+      const dist2 = dx * dx + dy * dy;
+      const touchDist = coinR * 2 + 1.5;
+      if (dy > 0 && dist2 < touchDist * touchDist) {
+        supportCount++;
+        if (dx < 0) hasLeft = true;
+        if (dx > 0) hasRight = true;
+      }
+    }
+
+    let stable = false;
+    if (onFloor) stable = true;
+    else if (supportCount >= 2 && hasLeft && hasRight) stable = true;
+    else if (supportCount >= 1 && atWall) stable = true;
+
+    if (stable) {
+      c.restFrames = (c.restFrames || 0) + 1;
+      if (c.restFrames >= SETTLE_FRAMES) {
+        c.vx = 0; c.vy = 0; c.spin = 0;
+        c.settled = true;
+      }
+    } else {
+      c.restFrames = 0;
+    }
+  }
+}
+
+/* ── Loop ──────────────────────────────────────────────────────────────────── */
+function loop(ts) {
+  if (!running) return;
+  if (!lastTimestamp) lastTimestamp=ts;
+  const dt=Math.min((ts-lastTimestamp)/1000, 0.05);
+  lastTimestamp=ts;
+
+  const earned=penniesPerSecond*dt;
+  totalEarnedCents+=earned;
+
+  // If tax sequence is playing, skip spawning but keep physics/rendering
+  if (taxPaused) {
+    updateTaxSequence();
+  } else {
+    pennyBucket += earned;
+    const toSpawn=Math.min(Math.floor(pennyBucket),6);
+    pennyBucket-=toSpawn;
+    for (let i=0;i<toSpawn;i++) spawnCoin();
+  }
+
+  // Check for 100-coin events
+  if (!taxPaused && coins.length >= 100) {
+    if (taxEnabled && !taxAlreadyHit) {
+      // First time hitting 100 — tax deduction
+      startTaxSequence();
+      taxAlreadyHit = true;
+    } else {
+      // Tax already taken (or tax off) — clear all coins
+      coins = [];
+      taxAlreadyHit = false;
+      updateNoteStack();
+    }
+  }
+
+  ctx.imageSmoothingEnabled=false;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  updatePhysics();
+
+  for (const c of coins) {
+    ctx.save();
+    ctx.imageSmoothingEnabled=false;
+    ctx.translate(c.x, c.y);
+    ctx.rotate(c.angle);
+    ctx.drawImage(coinImage,-coinR,-coinR,coinR*2,coinR*2);
+    // Tax flash: red tint overlay
+    if (c.taxFlashing) {
+      const elapsed = performance.now() - c.taxFlashStart;
+      const pulse = 0.4 + 0.3 * Math.sin(elapsed / 80);
+      ctx.globalAlpha = pulse;
+      ctx.globalCompositeOperation = 'source-atop';
+      ctx.fillStyle = '#ff2222';
+      ctx.beginPath();
+      ctx.arc(0, 0, coinR + 1, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  animationId=requestAnimationFrame(loop);
+}
+</script>
+</body>
+</html>
