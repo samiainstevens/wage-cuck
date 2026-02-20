@@ -1256,7 +1256,7 @@ function updatePhysics() {
     // ── 2. INTEGRATE (gravity + predict position) ───────────────────────────
     for (let i = 0; i < n; i++) {
       const c = coins[i];
-      if (c.settled) continue;
+      if (c.settled || c === dragCoin) continue;
       c.vy += subGrav;
       c.x += c.vx;
       c.y += c.vy;
