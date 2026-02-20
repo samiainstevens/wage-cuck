@@ -213,12 +213,17 @@
       font-size: 14px;
       padding: 6px 14px;
       white-space: nowrap;
+      color: inherit;
     }
     .optItem:hover { background: rgba(0,0,0,0.07); }
     .optItem.disabled {
       opacity: 0.5;
       pointer-events: none;
       cursor: default;
+    }
+    #politeBtn.disabled {
+      pointer-events: auto;
+      cursor: pointer;
     }
     .optSep {
       height: 1px;
@@ -284,6 +289,7 @@
     }
     body.darkMode .optSep { background: rgba(255,255,255,0.15); }
     body.darkMode .optItem:hover { background: rgba(255,255,255,0.1); }
+    body.darkMode .topBtn img { filter: invert(1); }
     body.darkMode #footer a { color: #aaa; }
 
     body.lightMode {
@@ -307,8 +313,6 @@
       display: block;
       image-rendering: pixelated;
       image-rendering: crisp-edges;
-    }
-    canvas {
       position: fixed;
       top: 0;
       left: 0;
@@ -350,32 +354,19 @@
       .optItem { font-size: 18px; padding: 10px 18px; }
       #optionsPanel { min-width: 160px; }
       #footer { font-size: 10px; }
-      #footer.footerRight { text-align: right; right: 10px; width: auto; }
+      #footer.footerRight { text-align: right; left: auto; right: 10px; width: auto; }
       #startScreen { padding: 18px 18px 22px; }
       #startScreen h1 { font-size: 32px; }
       #startBtn { font-size: 18px; padding: 10px 28px; }
     }
-    #taxOverlay {
-      display: none;
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      z-index: 400;
-      justify-content: center;
-      align-items: center;
-      background: rgba(0,0,0,0.3);
-      pointer-events: none;
-    }
-    #taxOverlay.show { display: flex; }
-    #taxOverlay span {
-      font-size: 25vw;
-      font-weight: 900;
-      color: #ff2222;
-      text-shadow: 0 0 40px rgba(255,0,0,0.5);
-      animation: taxPulse 0.4s ease-in-out infinite alternate;
-    }
-    @keyframes taxPulse {
-      0%   { transform: scale(1); opacity: 0.8; }
-      100% { transform: scale(1.08); opacity: 1; }
+    @media (max-height: 500px) {
+      #footer.footerRight { text-align: right; left: auto; right: 10px; width: auto; }
+      #startScreen { padding: 10px 16px 14px; }
+      #startScreen h1 { font-size: 24px; margin-bottom: 6px; }
+      #startScreen p { margin: 0 0 2px 0; font-size: 12px; }
+      #wageRow { gap: 8px; margin-top: 2px; }
+      #wageInfo { font-size: 10px; max-width: 160px; }
+      #startBtn { font-size: 16px; padding: 8px 24px; margin-top: 10px; }
     }
   </style>
 </head>
@@ -457,6 +448,8 @@
         <button class="optItem" id="themeDarkBtn" onclick="setTheme('dark')">Dark Mode</button>
         <button class="optItem" id="themeLightBtn" onclick="setTheme('light')">Light Mode</button>
         <div class="optSep"></div>
+        <button class="optItem" id="politeBtn" onclick="togglePoliteMode()">Polite Mode</button>
+        <div class="optSep"></div>
         <button class="optItem" onclick="openInfo()">Info</button>
         <button class="optItem" onclick="shareApp()">Share</button>
       </div>
@@ -472,8 +465,6 @@
 
 <div id="noteStack"></div>
 <div id="holdDim"></div>
-
-<div id="taxOverlay"><span>TAX</span></div>
 
 <div id="infoOverlay" onclick="if(event.target===this)closeInfo()">
   <div id="infoBox">
@@ -601,8 +592,10 @@ let soundEnabled = false;
 let audioCtx = null;
 let coinSoundBuffer = null;
 let manyCoinsSoundBuffer = null;
+let popSoundBuffer = null;
 let coinAudioEl = null;      // fallback HTML5 Audio element
 let manyCoinsAudioEl = null; // fallback for many coins sound
+let popAudioEl = null;       // fallback for pop sound
 let lastSoundTime = 0;
 
 async function initAudio() {
@@ -619,9 +612,10 @@ async function initAudio() {
     silentSrc.start(0);
   } catch(ignore) {}
   try {
-    const [resp1, resp2] = await Promise.all([
+    const [resp1, resp2, resp3] = await Promise.all([
       fetch('coindropsound.mp3'),
-      fetch('manycoinssound.mp3')
+      fetch('manycoinssound.mp3'),
+      fetch('popsound.mp3')
     ]);
     if (!resp1.ok) throw new Error('coindropsound fetch failed: ' + resp1.status);
     const ab1 = await resp1.arrayBuffer();
@@ -629,6 +623,10 @@ async function initAudio() {
     if (resp2.ok) {
       const ab2 = await resp2.arrayBuffer();
       manyCoinsSoundBuffer = await audioCtx.decodeAudioData(ab2);
+    }
+    if (resp3.ok) {
+      const ab3 = await resp3.arrayBuffer();
+      popSoundBuffer = await audioCtx.decodeAudioData(ab3);
     }
     console.log('Audio loaded via Web Audio API');
   } catch(e) {
@@ -654,6 +652,14 @@ async function initAudio() {
       manyCoinsAudioEl.load();
     } catch(e3) {
       manyCoinsAudioEl = null;
+    }
+    try {
+      popAudioEl = new Audio('popsound.mp3');
+      popAudioEl.preload = 'auto';
+      popAudioEl.volume = 0.5;
+      popAudioEl.load();
+    } catch(e4) {
+      popAudioEl = null;
     }
   }
 }
@@ -726,6 +732,25 @@ function playManyCoinsSound(vol) {
   }
 }
 
+function playPopSound(vol) {
+  if (!soundEnabled) return;
+  vol = Math.min(1, Math.max(0.1, vol));
+  if (audioCtx && popSoundBuffer) {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const src = audioCtx.createBufferSource();
+    const gain = audioCtx.createGain();
+    gain.gain.value = vol;
+    src.buffer = popSoundBuffer;
+    src.connect(gain);
+    gain.connect(audioCtx.destination);
+    src.start(0);
+  } else if (popAudioEl) {
+    const clone = popAudioEl.cloneNode();
+    clone.volume = vol * 0.6;
+    clone.play().catch(() => {});
+  }
+}
+
 async function toggleSound() {
   soundEnabled = !soundEnabled;
   document.getElementById('audioBtn').textContent = soundEnabled ? 'Audio On' : 'Audio Off';
@@ -733,6 +758,18 @@ async function toggleSound() {
     await initAudio();
     if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
   }
+}
+
+let politeMode = false;
+function togglePoliteMode() {
+  politeMode = !politeMode;
+  const btn = document.getElementById('politeBtn');
+  if (politeMode) { btn.classList.add('disabled'); } else { btn.classList.remove('disabled'); }
+  const title = politeMode ? 'Wage Counter' : 'Wage Cuck';
+  document.title = title;
+  document.getElementById('titleText').textContent = title;
+  document.querySelector('#startScreen h1').textContent = title;
+  document.getElementById('cuckLabel').textContent = politeMode ? 'Well done, you.' : 'What a good little wage cuck.';
 }
 
 let optionsOpenedByHover = false;
@@ -788,8 +825,10 @@ function setTheme(theme) {
 /* ── Tax Mode ──────────────────────────────────────────────────────────────── */
 let taxEnabled = false;
 let taxRate = 0.20;
-let taxPreview = false;  // true while TAX text + flashing is showing (99 coins)
-let taxAlreadyHit = false; // true after tax taken at 100 coins; next 100 clears
+let goodCoinFading = false;  // true while good coins are fading out
+let fadeStart = 0;           // timestamp when fade began
+const FADE_DURATION = 500;   // ms for good coins to fade out
+const TAX_COIN_LIFETIME = 2000; // ms before taxed coins burst and vanish
 
 function onTaxCheckChange() {
   const checked = document.getElementById('taxCheckbox').checked;
@@ -801,42 +840,77 @@ function onAlreadyStartedChange() {
   document.getElementById('alreadyStartedWrap').style.display = checked ? 'block' : 'none';
 }
 
-function startTaxPreview() {
-  taxPreview = true;
-  document.getElementById('taxOverlay').classList.add('show');
-  // Mark taxRate% of coins for flashing
-  const numToTax = Math.max(1, Math.round(coins.length * taxRate));
-  const indices = [];
-  for (let i = 0; i < coins.length; i++) indices.push(i);
-  for (let i = indices.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [indices[i], indices[j]] = [indices[j], indices[i]];
-  }
-  for (let k = 0; k < numToTax; k++) {
-    coins[indices[k]].taxMarked = true;
-    coins[indices[k]].taxFlashing = true;
-    coins[indices[k]].taxFlashStart = performance.now();
+function burstAroundCoin(taxedCoin) {
+  // Push nearby coins away from the vanishing taxed coin
+  for (const c of coins) {
+    if (c === taxedCoin || c.isTaxed) continue;
+    const dx = c.x - taxedCoin.x, dy = c.y - taxedCoin.y;
+    const dist2 = dx * dx + dy * dy;
+    const radius = coinR * 6;
+    if (dist2 < radius * radius && dist2 > 0.01) {
+      const dist = Math.sqrt(dist2);
+      const strength = (1 - dist / radius) * 2.5;
+      c.vx += (dx / dist) * strength;
+      c.vy += (dy / dist) * strength;
+      c.settled = false;
+      c.restFrames = 0;
+    }
   }
 }
 
-function executeTaxRemoval() {
-  document.getElementById('taxOverlay').classList.remove('show');
-  const removed = coins.filter(c => c.taxMarked);
-  coins = coins.filter(c => !c.taxMarked);
-  displayCents -= removed.length;
-  if (displayCents < 0) displayCents = 0;
-  updateCounterDisplay();
-  updateNoteStack();
-  // Shake remaining coins
-  for (const c of coins) {
-    c.vx += (Math.random() - 0.5) * 3.0;
-    c.vy -= Math.random() * 2.0 + 0.5;
-    c.spin += (Math.random() - 0.5) * 0.3;
-    c.settled = false;
-    c.restFrames = 0;
+function updateTaxedCoins() {
+  const now = performance.now();
+  for (let i = coins.length - 1; i >= 0; i--) {
+    const c = coins[i];
+    if (!c.isTaxed) continue;
+    if (now - c.taxSpawnTime >= TAX_COIN_LIFETIME) {
+      burstAroundCoin(c);
+      playPopSound(0.5);
+      coins.splice(i, 1);
+    }
   }
-  taxPreview = false;
-  taxAlreadyHit = true;
+}
+
+function countGoodCoins() {
+  let count = 0;
+  for (const c of coins) { if (!c.isTaxed && !c.fading) count++; }
+  return count;
+}
+
+function startGoodCoinFade() {
+  goodCoinFading = true;
+  fadeStart = performance.now();
+  for (const c of coins) {
+    if (!c.isTaxed) c.fading = true;
+  }
+}
+
+function updateGoodCoinFade() {
+  if (!goodCoinFading) return;
+  const elapsed = performance.now() - fadeStart;
+  if (elapsed >= FADE_DURATION) {
+    // Remove all fading (good) coins
+    coins = coins.filter(c => !c.fading);
+    goodCoinFading = false;
+    // Add a note icon
+    addNoteWithBounce();
+  }
+}
+
+function addNoteWithBounce() {
+  const container = document.getElementById('noteStack');
+  const img = document.createElement('img');
+  img.src = NOTE_IMAGES[selectedCurrencyKey];
+  img.style.transition = 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)';
+  img.style.transform = 'scale(0)';
+  container.appendChild(img);
+  repositionNotes();
+  // Trigger bounce animation
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() {
+      img.style.transform = 'scale(1)';
+    });
+  });
 }
 
 function updateCounterDisplay() {
@@ -852,24 +926,6 @@ function updateCounterDisplay() {
   } else {
     el.classList.remove('full');
   }
-}
-
-function updateNoteStack() {
-  const wholeDollars = Math.floor(displayCents / 100);
-  const container = document.getElementById('noteStack');
-  // Add notes
-  while (noteCount < wholeDollars) {
-    const img = document.createElement('img');
-    img.src = NOTE_IMAGES[selectedCurrencyKey];
-    container.appendChild(img);
-    noteCount++;
-  }
-  // Remove notes if count dropped (e.g. tax)
-  while (noteCount > wholeDollars) {
-    noteCount--;
-    if (container.lastChild) container.removeChild(container.lastChild);
-  }
-  repositionNotes();
 }
 
 function openInfo() {
@@ -904,11 +960,9 @@ function toggleFullscreen() {
 const canvas    = document.getElementById("game");
 const ctx       = canvas.getContext("2d", { alpha: true });
 const coinImage = new Image(); coinImage.src = "coin.png";
+const coinOverlayImage = new Image(); coinOverlayImage.src = "coinoverlay.png";
 
-const COIN_SPR_R = 5;
-
-let scale   = 1;
-let coinR   = COIN_SPR_R;
+let coinR   = 5;
 
 function getWalls() {
   return {
@@ -917,8 +971,6 @@ function getWalls() {
     floor: canvas.height
   };
 }
-
-function clamp(v,lo,hi){ return v<lo?lo:v>hi?hi:v; }
 
 function resizeCanvas() {
   // Size coins so 100 can fit: coinR = sqrt(area * packing) / 20
@@ -1062,8 +1114,7 @@ const WAKE_THRESHOLD = 0.8;       // impact speed needed to wake a settled coin
 const MARGIN_SP      = 1;         // pixel margin from jar walls/floor
 
 /* ── App state ─────────────────────────────────────────────────────────────── */
-let coins = [], totalEarnedCents=0, pennyBucket=0, displayCents=0;
-let noteCount = 0;
+let coins = [], pennyBucket=0, displayCents=0;
 let penniesPerSecond=0, currency='£';
 let selectedCurrencyKey = 'GBP';
 let animationId=null, lastTimestamp=null, running=false;
@@ -1082,8 +1133,9 @@ function start() {
   // Tax mode
   taxEnabled = document.getElementById('taxCheckbox').checked;
   const rawTax = parseFloat(document.getElementById('taxRate').value);
-  taxRate = Math.min(100, Math.max(0, isNaN(rawTax) ? 20 : rawTax)) / 100;
+  taxRate = Math.min(1, Math.max(0, isNaN(rawTax) ? 20 : rawTax) / 100);
   if (taxRate === 0) taxEnabled = false;
+  if (rawTax >= 100) taxRate = 1;
   resizeCanvas();
   // "Already started" catch-up
   if (document.getElementById('alreadyStartedCheckbox').checked) {
@@ -1091,17 +1143,16 @@ function start() {
     const mins = parseFloat(document.getElementById('minutesWorked').value) || 0;
     const totalSecs = hrs * 3600 + mins * 60;
     const grossCents = Math.floor(penniesPerSecond * totalSecs);
-    // Apply tax if tax mode enabled
-    let netCents = grossCents;
-    if (taxEnabled && taxRate > 0) {
-      netCents = Math.floor(grossCents * (1 - taxRate));
-    }
+    // Deterministic tax deduction
+    const taxCents = taxEnabled ? Math.floor(grossCents * taxRate) : 0;
+    const netCents = grossCents - taxCents;
     if (netCents > 0) {
-      totalEarnedCents += netCents;
       displayCents += netCents;
       updateCounterDisplay();
-      updateNoteStack();
-      // The remainder cents (fractional dollar) drop as coins
+      // Add note icons for whole dollars/pounds/euros of net earnings
+      const wholeUnits = Math.floor(netCents / 100);
+      for (let i = 0; i < wholeUnits; i++) addNoteWithBounce();
+      // The remainder cents drop as untaxed coins
       const remainderCents = netCents % 100;
       const coinsToSpawn = Math.min(remainderCents, 80);
       for (let i = 0; i < coinsToSpawn; i++) {
@@ -1115,9 +1166,8 @@ function start() {
 
 function restart() {
   running=false; cancelAnimationFrame(animationId);
-  coins=[]; totalEarnedCents=0; pennyBucket=0; displayCents=0; noteCount=0; lastTimestamp=null;
-  taxPreview=false; taxAlreadyHit=false;
-  document.getElementById('taxOverlay').classList.remove('show');
+  coins=[]; pennyBucket=0; displayCents=0; lastTimestamp=null;
+  goodCoinFading=false;
   document.getElementById("counterAmount").textContent = currency+"0";
   document.getElementById("counter").classList.remove('full');
   document.getElementById('noteStack').innerHTML = '';
@@ -1144,21 +1194,27 @@ function spawnCoin() {
     if (!coll) break;
     x = left + Math.random() * (right - left);
   }
+  const isTaxed = taxEnabled && Math.random() < taxRate;
   coins.push({
     x: x,
-    y: -coinR - Math.random()*(20*scale),
+    y: -coinR - Math.random()*20,
     vx: (Math.random()-0.5)*1.8,
     vy: 0.5 + Math.random()*0.4,
     angle: Math.random()*Math.PI*2,
     spin:  (Math.random()-0.5)*0.20 + (Math.random() > 0.5 ? 0.04 : -0.04),
     settled: false,
     restFrames: 0,
-    hasPlayedSound: false
+    hasPlayedSound: false,
+    isTaxed: isTaxed,
+    taxSpawnTime: isTaxed ? performance.now() : 0,
+    fading: false,
+    fadeOpacity: 1
   });
-  // Tick the counter in sync with each coin drop
-  displayCents++;
-  updateCounterDisplay();
-  updateNoteStack();
+  // Only good (untaxed) coins count toward earnings
+  if (!isTaxed) {
+    displayCents++;
+    updateCounterDisplay();
+  }
 }
 
 // Silent spawn for catch-up (no counter increment, no tax roll)
@@ -1168,14 +1224,18 @@ function spawnCoinSilent() {
   const x = left + Math.random() * (right - left);
   coins.push({
     x: x,
-    y: -coinR - Math.random() * (40 * scale),
+    y: -coinR - Math.random() * 40,
     vx: (Math.random() - 0.5) * 1.8,
     vy: 0.5 + Math.random() * 0.4,
     angle: Math.random() * Math.PI * 2,
     spin: (Math.random() - 0.5) * 0.20 + (Math.random() > 0.5 ? 0.04 : -0.04),
     settled: false,
     restFrames: 0,
-    hasPlayedSound: true // suppress landing sound for catch-up coins
+    hasPlayedSound: true, // suppress landing sound for catch-up coins
+    isTaxed: false,
+    taxSpawnTime: 0,
+    fading: false,
+    fadeOpacity: 1
   });
 }
 
@@ -1251,15 +1311,13 @@ function updatePhysics() {
       // 3b. Jar wall/floor clamping
       for (let i = 0; i < n; i++) {
         const c = coins[i];
-        const w = getWalls(c.y);
+        const w = getWalls();
         const minX = w.left + coinR;
         const maxX = w.right - coinR;
         const maxY = w.floor - coinR;
         if (c.x < minX) c.x = minX;
         if (c.x > maxX) c.x = maxX;
         if (c.y > maxY) c.y = maxY;
-
-
       }
     }
 
@@ -1314,7 +1372,7 @@ function updatePhysics() {
     for (let i = 0; i < n; i++) {
       const c = coins[i];
       if (c.settled) continue;
-      const w = getWalls(c.y);
+      const w = getWalls();
       const minX = w.left + coinR;
       const maxX = w.right - coinR;
       const maxY = w.floor - coinR;
@@ -1369,7 +1427,7 @@ function updatePhysics() {
     for (let i = 0; i < n; i++) {
       const c = coins[i];
       if (c.settled) continue;
-      const w = getWalls(c.y);
+      const w = getWalls();
       const maxY = w.floor - coinR;
       // Wider floor detection: within 2px counts as "on floor"
       // so rolling persists during small bounces
@@ -1489,7 +1547,7 @@ function updatePhysics() {
     // Stability: on floor, OR in a valley (2+ supports from both sides),
     // OR against a wall with 1+ support below.
     // A single coin below with NO wall = UNSTABLE (slides off).
-    const w = getWalls(c.y);
+    const w = getWalls();
     const onFloor = (c.y >= w.floor - coinR - 1.0);
     const atWall = (c.x <= w.left + coinR + 1.0) || (c.x >= w.right - coinR - 1.0);
 
@@ -1531,7 +1589,6 @@ function loop(ts) {
   lastTimestamp=ts;
 
   const earned=penniesPerSecond*dt;
-  totalEarnedCents+=earned;
 
   // Spawning always continues (tax doesn't pause earnings)
   pennyBucket += earned;
@@ -1539,24 +1596,15 @@ function loop(ts) {
   pennyBucket-=toSpawn;
   for (let i=0;i<toSpawn;i++) spawnCoin();
 
-  // Tax preview at 99 coins: show TAX text + flash marked coins
-  if (taxEnabled && !taxAlreadyHit && !taxPreview && coins.length >= 99) {
-    startTaxPreview();
-  }
-  // At 100 coins: execute tax removal or clear
-  if (coins.length >= 100) {
-    if (taxEnabled && taxPreview) {
-      executeTaxRemoval();
-    } else if (taxEnabled && !taxAlreadyHit) {
-      // Edge case: jumped past 99 straight to 100
-      startTaxPreview();
-      executeTaxRemoval();
-    } else {
-      // Tax already taken (or tax off) — clear all coins
-      coins = [];
-      taxAlreadyHit = false;
-      updateNoteStack();
-    }
+  // Remove taxed coins that have expired
+  updateTaxedCoins();
+
+  // Update good coin fade-out
+  updateGoodCoinFade();
+
+  // Check if 100 good (untaxed, non-fading) coins are on screen
+  if (!goodCoinFading && countGoodCoins() >= 100) {
+    startGoodCoinFade();
   }
 
   ctx.imageSmoothingEnabled=false;
@@ -1569,17 +1617,19 @@ function loop(ts) {
     ctx.imageSmoothingEnabled=false;
     ctx.translate(c.x, c.y);
     ctx.rotate(c.angle);
+    // Fading good coins
+    if (c.fading && goodCoinFading) {
+      const elapsed = performance.now() - fadeStart;
+      c.fadeOpacity = Math.max(0, 1 - elapsed / FADE_DURATION);
+      ctx.globalAlpha = c.fadeOpacity;
+    }
     ctx.drawImage(coinImage,-coinR,-coinR,coinR*2,coinR*2);
-    // Tax flash: red tint overlay
-    if (c.taxFlashing) {
-      const elapsed = performance.now() - c.taxFlashStart;
-      const pulse = 0.4 + 0.3 * Math.sin(elapsed / 80);
+    // Taxed coin: red flashing overlay
+    if (c.isTaxed) {
+      const elapsed = performance.now() - c.taxSpawnTime;
+      const pulse = 0.35 + 0.3 * Math.sin(elapsed / 80);
       ctx.globalAlpha = pulse;
-      ctx.globalCompositeOperation = 'source-atop';
-      ctx.fillStyle = '#ff2222';
-      ctx.beginPath();
-      ctx.arc(0, 0, coinR + 1, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.drawImage(coinOverlayImage, -coinR, -coinR, coinR * 2, coinR * 2);
     }
     ctx.restore();
   }
